@@ -13,11 +13,13 @@ const userSchema = new mongoose.Schema(
       required: [true, "Please provide an email"],
       unique: true,
       lowercase: true,
+      trim: true,
       match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, "Invalid email"],
     },
     password: {
       type: String,
       required: [true, "Please provide a password"],
+      minlength: [8, "Password must be at least 8 characters"],
       select: false, // Don't return password by default
     },
     avatar: {
@@ -32,8 +34,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    skillsOffered: [String],
-    skillsWanted: [String],
+    skillsOffered: {
+      type: [String],
+      default: [],
+    },
+    skillsWanted: {
+      type: [String],
+      default: [],
+    },
     rating: {
       type: Number,
       default: 0,

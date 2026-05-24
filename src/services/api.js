@@ -1,44 +1,62 @@
-import { currentUser, swipeUsers, matchedUsers, conversations } from "../data/mockData";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
+const TOKEN_KEY = "skillswap_token";
 
-// Mock API - returns static data without backend
-export const api = {
-  // Auth endpoints (mock)
-  register: async (userData) => {
-    return { success: true, user: currentUser, token: "mock_token" };
-  },
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
 
-  login: async (email, password) => {
-    return { success: true, user: currentUser, token: "mock_token" };
-  },
+export function setToken(token) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+}
 
-  getCurrentUser: async (token) => {
-    return { success: true, user: currentUser };
-  },
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
 
-  updateProfile: async (token, profileData) => {
-    return { success: true, user: { ...currentUser, ...profileData } };
-  },
+export function normalizeUser(user) {
+  if (!user) return null;
 
-  // User endpoints (mock)
-  getAllUsers: async (token) => {
-    return { success: true, users: swipeUsers };
-  },
+  const uid = user.uid || user.id || user._id;
 
-  getUserById: async (token, userId) => {
-    const user = swipeUsers.find(u => u.id === userId);
-    return { success: true, user };
-  },
+  return {
+    ...user,
+    id: uid,
+    uid,
+    displayName: user.displayName || user.name,
+  };
+}
 
-  addMatch: async (token, userId) => {
-    return { success: true, matched: true };
-  },
+export async function apiRequest(path, options = {}) {
+  const token = getToken();
+  const isFormData = options.body instanceof FormData;
+  const headers = {
+    ...(options.headers || {}),
+  };
 
-  // Message endpoints (mock)
-  getMessages: async (token, userId) => {
-    return { success: true, messages: conversations[userId] || [] };
-  },
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
 
-  sendMessage: async (token, receiverId, text) => {
-    return { success: true, message: { id: Date.now(), sender: "me", text, time: new Date().toLocaleTimeString() } };
-  },
-};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const data = contentType.includes("application/json") ? await response.json() : null;
+
+  if (!response.ok) {
+    const error = new Error(data?.message || "Request failed");
+    error.status = response.status;
+    if (response.status === 401) clearToken();
+    throw error;
+  }
+
+  return data;
+}

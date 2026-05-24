@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 
+const getJwtSecret = () => process.env.JWT_SECRET || "dev-secret-change-me";
+
 export const protect = async (req, res, next) => {
   try {
     let token;
@@ -12,16 +14,16 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "Not authorized to access this route" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     req.userId = decoded.id;
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({ message: "Not authorized to access this route" });
   }
 };
 
 export const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id }, getJwtSecret(), {
     expiresIn: "30d",
   });
 };

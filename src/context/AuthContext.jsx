@@ -1,65 +1,111 @@
-import { createContext, useContext, useEffect, useState } from "react";
-
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-} from "firebase/auth";
-
-import { auth } from "../firebase";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { getCurrentUser, loginUser, logoutUser, registerWithProfile } from "../services/authService";
+import { getToken, normalizeUser } from "../services/api";
+import { getUserProfile } from "../services/userService";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
-  // AUTH STATE LISTENER
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+  const setSessionUser = useCallback((nextUser) => {
+    const normalized = normalizeUser(nextUser);
+    setUser(normalized);
+    setProfile(normalized);
+    return normalized;
   }, []);
 
-  // REGISTER
-  const register = async (email, password) => {
-    return createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+  const loadProfile = useCallback(
+    async (uid) => {
+      if (!uid) {
+        setProfile(null);
+        return null;
+      }
+
+      setProfileLoading(true);
+      try {
+        const userProfile = await getUserProfile(uid);
+        setProfile(userProfile);
+        setUser((current) => normalizeUser({ ...current, ...userProfile }));
+        return userProfile;
+      } finally {
+        setProfileLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateSession() {
+      if (!getToken()) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const currentUser = await getCurrentUser();
+        if (!cancelled) setSessionUser(currentUser);
+      } catch (error) {
+        console.error("Session hydrate failed:", error);
+        if (!cancelled) {
+          setUser(null);
+          setProfile(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    hydrateSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setSessionUser]);
+
+  const register = async (email, password, profileData) => {
+    const createdUser = await registerWithProfile(email, password, profileData);
+    setSessionUser(createdUser);
+    return createdUser;
   };
 
-  // LOGIN
   const login = async (email, password) => {
-    return signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    const loggedInUser = await loginUser(email, password);
+    setSessionUser(loggedInUser);
+    return loggedInUser;
   };
 
-  // LOGOUT
   const logout = async () => {
-    return signOut(auth);
+    await logoutUser();
+    setUser(null);
+    setProfile(null);
+  };
+
+  const refreshProfile = async () => {
+    if (!user?.uid) return null;
+    return loadProfile(user.uid);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        profile,
         loading,
+        profileLoading,
         register,
         login,
         logout,
+        refreshProfile,
         isAuthenticated: !!user,
       }}
     >
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

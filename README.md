@@ -1,16 +1,52 @@
-# React + Vite
+# Smart Skill Exchange
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend with a Node.js, Express, MongoDB, JWT, and Socket.IO backend.
 
-Currently, two official plugins are available:
+## Run Locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Install frontend dependencies:
+   ```bash
+   npm install
+   ```
 
-## React Compiler
+2. Install backend dependencies:
+   ```bash
+   cd backend
+   npm install
+   cd ..
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3. Create backend environment file:
+   ```bash
+   copy backend\.env.example backend\.env
+   ```
 
-## Expanding the ESLint configuration
+4. Edit `backend/.env`:
+   ```env
+   PORT=5000
+   CLIENT_ORIGIN=http://localhost:5173
+   MONGODB_URI=mongodb://127.0.0.1:27017/smart-skill-exchange
+   JWT_SECRET=replace-this-with-a-long-random-secret
+   ```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+5. Run both frontend and backend:
+   ```bash
+   npm run dev:all
+   ```
+
+6. Open `http://localhost:5173`.
+
+## MongoDB
+
+You can use either local MongoDB or MongoDB Atlas.
+
+- Local MongoDB: install MongoDB Community Server and keep `MONGODB_URI=mongodb://127.0.0.1:27017/smart-skill-exchange`.
+- MongoDB Atlas: create a free cluster, copy the connection string, and put it in `backend/.env`.
+
+## Useful Commands
+
+```bash
+npm run lint
+npm run build
+npm run dev:server
+```

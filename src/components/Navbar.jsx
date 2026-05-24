@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { Sun, Moon, Zap, Menu, X, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import UserAvatar from "./UserAvatar";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -12,68 +13,9 @@ const navLinks = [
   { to: "/profile", label: "Profile" },
 ];
 
-// Get user initials for avatar
-function getUserInitials(user) {
-  if (!user) return "?";
-
-  // Try to get name from displayName or email
-  const name = user.displayName || user.email || "";
-
-  if (!name) return "?";
-
-  const parts = name.split(" ");
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  return name.substring(0, 2).toUpperCase();
-}
-
-// Generate a color based on the user's email
-function getAvatarColor(user) {
-  if (!user?.email) return "bg-primary";
-
-  const colors = [
-    "bg-blue-500",
-    "bg-purple-500",
-    "bg-pink-500",
-    "bg-red-500",
-    "bg-orange-500",
-    "bg-yellow-500",
-    "bg-green-500",
-    "bg-teal-500",
-    "bg-cyan-500",
-    "bg-indigo-500",
-  ];
-
-  const hash = user.email.charCodeAt(0) + user.email.charCodeAt(user.email.length - 1);
-  return colors[hash % colors.length];
-}
-
-// Avatar Component
-function Avatar({ user, size = "md" }) {
-  const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-10 h-10",
-    lg: "w-12 h-12",
-  };
-
-  const bgColor = getAvatarColor(user);
-  const initials = getUserInitials(user);
-
-  return (
-    <div
-      className={`${sizeClasses[size]} rounded-full ring-2 ring-primary ring-offset-2 ring-offset-base-100 flex items-center justify-center font-bold text-white ${bgColor}`}
-      title={user?.email}
-    >
-      {initials}
-    </div>
-  );
-}
-
 export default function Navbar() {
   const { isDark, toggleTheme } = useTheme();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, profile, logout, isAuthenticated } = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -164,7 +106,7 @@ export default function Navbar() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Avatar user={user} size="md" />
+                  <UserAvatar user={profile || user} size="md" className="ring-primary ring-offset-2 ring-offset-base-100" />
                 </motion.button>
 
                 {/* DROPDOWN MENU */}
@@ -184,10 +126,10 @@ export default function Navbar() {
                     {/* USER INFO */}
                     <li className="menu-title px-3 py-2">
                       <div className="flex items-center gap-3">
-                        <Avatar user={user} size="sm" />
+                        <UserAvatar user={profile || user} size="sm" />
                         <div className="min-w-0">
                           <p className="font-semibold text-sm truncate">
-                            {user.displayName || user.email?.split("@")[0] || "User"}
+                            {profile?.name || user.displayName || user.email?.split("@")[0] || "User"}
                           </p>
                           <p className="text-xs text-base-content/60 truncate">
                             {user.email}
@@ -319,10 +261,10 @@ export default function Navbar() {
               {/* USER INFO - MOBILE */}
               {isAuthenticated && user && (
                 <div className="flex items-center gap-3 mb-6 pb-6 border-b border-base-300">
-                  <Avatar user={user} size="lg" />
+                  <UserAvatar user={profile || user} size="lg" />
                   <div className="min-w-0">
                     <p className="font-semibold text-sm truncate">
-                      {user.displayName || user.email?.split("@")[0] || "User"}
+                      {profile?.name || user.displayName || user.email?.split("@")[0] || "User"}
                     </p>
                     <p className="text-xs text-base-content/60 truncate">
                       {user.email}

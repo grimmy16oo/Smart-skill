@@ -257,20 +257,14 @@ export default function LoginPage() {
           navigate("/swipe");
         }, 500);
       } else {
-        // SIGNUP
-        await register(email, password);
-
-        // Store profile data (to be saved to Firestore later)
-        const profileData = {
-          name,
-          email,
-          location,
-          bio,
-          avatar: null, // Will be generated from name initials
-          createdAt: new Date().toISOString(),
-        };
-
-        console.log("Profile data to save:", profileData);
+        await register(email, password, {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          location: location.trim(),
+          bio: bio.trim(),
+          skillsOffered: [],
+          skillsWanted: [],
+        });
 
         setSuccessMessage("Account created successfully! Redirecting...");
         setTimeout(() => {
@@ -281,7 +275,7 @@ export default function LoginPage() {
       console.error("Auth error:", err);
 
       // Better error messages
-      let errorMessage = "Something went wrong. Please try again.";
+      let errorMessage = err.message || "Something went wrong. Please try again.";
 
       if (err.code === "auth/email-already-in-use") {
         errorMessage = "This email is already registered. Please sign in instead.";
