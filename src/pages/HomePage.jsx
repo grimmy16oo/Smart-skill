@@ -38,8 +38,6 @@ export default function HomePage() {
         style={{ scaleX: scrollYProgress }}
       />
 
-      <Navbar />
-
       {/* 1. HERO CONTRAST CARD MODULE */}
       <section className="px-3 pt-3 lg:px-4 lg:pt-4 mb-24">
         <div className="w-full bg-gradient-to-tr from-[#cd3f24] via-[#e2593b] to-[#f49333] rounded-[36px] lg:rounded-[48px] relative overflow-hidden min-h-[88vh] flex flex-col justify-between p-6 lg:p-16 pt-32 lg:pt-40 text-white shadow-xl">

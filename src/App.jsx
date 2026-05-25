@@ -14,14 +14,18 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Navbar />
-          <Routes>
-            <Route path="/"        element={<HomePage />} />
-            <Route path="/login"   element={<LoginPage />} />
-            <Route path="/swipe"   element={<SwipePage />} />
-            <Route path="/chat"    element={<ChatPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
+          <div className="flex flex-col h-screen">
+            <Navbar />
+            <main className="flex-1 overflow-hidden">
+              <Routes>
+                <Route path="/"        element={<HomePage />} />
+                <Route path="/login"   element={<LoginPage />} />
+                <Route path="/swipe"   element={<SwipePage />} />
+                <Route path="/chat"    element={<ChatPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+              </Routes>
+            </main>
+          </div>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

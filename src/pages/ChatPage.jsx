@@ -458,8 +458,8 @@ export default function ChatPage() {
   return (
     <div
       className={`
-        fixed inset-0
-        pt-[72px]
+        w-full
+        h-screen
         overflow-hidden
         ${
           isDark

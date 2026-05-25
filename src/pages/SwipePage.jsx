@@ -171,7 +171,7 @@ export default function SwipePage() {
   }
 
   return (
-    <div className={`min-h-screen relative overflow-hidden pt-28 pb-16 px-6 lg:px-16 transition-colors duration-300 ${
+    <div className={`min-h-screen relative overflow-hidden pb-16 px-6 lg:px-16 transition-colors duration-300 pt-10 ${
       isDark ? "bg-[#0b0b0b] text-white" : "bg-[#fcfcfc] text-neutral-900"
     }`}>
       {/* BACKGROUND GRAPHIC ORBS */}

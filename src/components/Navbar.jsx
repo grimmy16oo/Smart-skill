@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { Sun, Moon, Menu, X, LogOut, User } from "lucide-react";
+import { Sun, Moon, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import UserAvatar from "./UserAvatar";
@@ -16,6 +16,7 @@ const navLinks = [
 export default function Navbar() {
   const { isDark, toggleTheme } = useTheme();
   const { user, profile, logout, isAuthenticated } = useAuth();
+
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -23,15 +24,15 @@ export default function Navbar() {
 
   return (
     <>
-      {/* FIXED NAVBAR (NO OVERLAY ISSUE NOW) */}
+      {/* NAVBAR */}
       <nav
-        className={`fixed top-0 left-0 w-full z-50 h-20 px-6 lg:px-16 flex items-center justify-between font-sans tracking-tight transition-colors duration-300 backdrop-blur-xl ${
+        className={`w-full h-20 z-50 px-6 lg:px-8 flex items-center justify-between font-sans tracking-tight transition-colors duration-300 ${
           isDark
-            ? "bg-black/30 text-white border-b border-white/5"
-            : "bg-white/70 text-neutral-900 border-b border-neutral-200/40"
+            ? "bg-black text-white "
+            : "bg-white text-neutral-900"
         }`}
       >
-        {/* BRAND */}
+        {/* LOGO */}
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-2 group">
             <span className="font-black text-2xl tracking-tight">
@@ -48,12 +49,12 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* CENTER LINKS */}
+        {/* DESKTOP NAV */}
         <div
-          className={`hidden lg:flex items-center gap-1 border backdrop-blur-xl px-1.5 py-1.5 rounded-2xl ${
+          className={`hidden lg:flex items-center gap-1 border px-1.5 py-1.5 rounded-2xl ${
             isDark
-              ? "bg-white/[0.04] border-white/[0.08]"
-              : "bg-neutral-900/[0.04] border-neutral-900/[0.06]"
+              ? "bg-neutral-800 border-neutral-700"
+              : "bg-neutral-100 border-neutral-200"
           }`}
         >
           {navLinks.map(({ to, label }) => {
@@ -63,14 +64,14 @@ export default function Navbar() {
               <Link
                 key={to}
                 to={to}
-                className={`px-5 py-2 text-sm font-medium rounded-xl transition-all ${
+                className={`px-5 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
                   active
                     ? isDark
                       ? "bg-white text-black"
                       : "bg-black text-white"
                     : isDark
-                    ? "text-white/70 hover:text-white"
-                    : "text-neutral-500 hover:text-neutral-900"
+                    ? "text-white/70 hover:text-white hover:bg-neutral-700"
+                    : "text-neutral-500 hover:text-neutral-900 hover:bg-white"
                 }`}
               >
                 {label}
@@ -79,50 +80,48 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* RIGHT ACTIONS */}
+        {/* RIGHT SIDE */}
         <div className="flex items-center gap-3">
-
-          {/* THEME */}
+          {/* THEME TOGGLE */}
           <motion.button
             onClick={toggleTheme}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
-              isDark
-                ? "bg-white/10 border-white/10"
-                : "bg-black/5 border-black/10"
-            }`}
             whileTap={{ scale: 0.95 }}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${
+              isDark
+                ? "bg-neutral-800 border-neutral-700 hover:bg-neutral-700"
+                : "bg-neutral-100 border-neutral-200 hover:bg-neutral-200"
+            }`}
           >
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </motion.button>
 
-          {/* USER */}
+          {/* USER / LOGIN */}
           {isAuthenticated && user ? (
-            <div className="relative">
-              <motion.button
-                className="w-10 h-10 rounded-full overflow-hidden border border-white/10"
-                whileTap={{ scale: 0.95 }}
-              >
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <button className="w-10 h-10 rounded-full overflow-hidden border border-white/10">
                 <UserAvatar user={profile || user} size="md" />
-              </motion.button>
-            </div>
+              </button>
+            </motion.div>
           ) : (
             <Link
               to="/login"
-              className={`hidden sm:block px-5 py-2 rounded-full text-sm font-semibold ${
+              className={`hidden sm:flex items-center justify-center px-5 py-2 rounded-full text-sm font-semibold transition-all ${
                 isDark
-                  ? "bg-white text-black"
-                  : "bg-black text-white"
+                  ? "bg-white text-black hover:opacity-90"
+                  : "bg-black text-white hover:opacity-90"
               }`}
             >
               Sign In
             </Link>
           )}
 
-          {/* MOBILE MENU */}
+          {/* MOBILE MENU BUTTON */}
           <button
             onClick={() => setMenuOpen(true)}
-            className={`lg:hidden w-10 h-10 rounded-xl flex items-center justify-center ${
-              isDark ? "bg-white/10" : "bg-black/5"
+            className={`lg:hidden w-10 h-10 rounded-xl flex items-center justify-center border ${
+              isDark
+                ? "bg-neutral-800 border-neutral-700"
+                : "bg-neutral-100 border-neutral-200"
             }`}
           >
             <Menu size={18} />
@@ -134,52 +133,89 @@ export default function Navbar() {
       <AnimatePresence>
         {menuOpen && (
           <>
+            {/* OVERLAY */}
             <motion.div
-              className="fixed inset-0 bg-black/40 z-50"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMenuOpen(false)}
             />
 
+            {/* SIDEBAR */}
             <motion.div
-              className={`fixed right-0 top-0 h-full w-72 z-50 p-6 ${
-                isDark ? "bg-black text-white" : "bg-white text-black"
-              }`}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 24 }}
+              className={`fixed right-0 top-0 h-full w-72 z-50 p-6 shadow-2xl ${
+                isDark
+                  ? "bg-neutral-900 text-white border-l border-neutral-800"
+                  : "bg-white text-neutral-900 border-l border-neutral-200"
+              }`}
             >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="font-bold">Menu</h2>
-                <button onClick={() => setMenuOpen(false)}>
-                  <X />
+              {/* TOP */}
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-lg font-bold">Menu</h2>
+
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isDark
+                      ? "bg-neutral-800 hover:bg-neutral-700"
+                      : "bg-neutral-100 hover:bg-neutral-200"
+                  }`}
+                >
+                  <X size={18} />
                 </button>
               </div>
 
-              <div className="flex flex-col gap-3">
-                {navLinks.map(({ to, label }) => (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={() => setMenuOpen(false)}
-                    className="text-sm py-2"
-                  >
-                    {label}
-                  </Link>
-                ))}
+              {/* LINKS */}
+              <div className="flex flex-col gap-2">
+                {navLinks.map(({ to, label }) => {
+                  const active = isActive(to);
+
+                  return (
+                    <Link
+                      key={to}
+                      to={to}
+                      onClick={() => setMenuOpen(false)}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                        active
+                          ? isDark
+                            ? "bg-white text-black"
+                            : "bg-black text-white"
+                          : isDark
+                          ? "hover:bg-neutral-800 text-white/80"
+                          : "hover:bg-neutral-100 text-neutral-700"
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
               </div>
 
-              <div className="mt-8">
+              {/* BOTTOM */}
+              <div className="mt-8 border-t pt-6 border-white/10">
                 {isAuthenticated ? (
                   <button
                     onClick={logout}
-                    className="text-red-500 text-sm"
+                    className="flex items-center gap-2 text-red-500 text-sm font-medium hover:opacity-80 transition-opacity"
                   >
-                    <LogOut size={14} /> Logout
+                    <LogOut size={16} />
+                    Logout
                   </button>
                 ) : (
-                  <Link to="/login" className="text-sm font-semibold">
+                  <Link
+                    to="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className={`inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-semibold ${
+                      isDark
+                        ? "bg-white text-black"
+                        : "bg-black text-white"
+                    }`}
+                  >
                     Login
                   </Link>
                 )}
