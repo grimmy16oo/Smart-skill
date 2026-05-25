@@ -1,9 +1,19 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.urbanist {
+  font-family: "Urbanist", sans-serif;
+  font-optical-sizing: auto;
+}
 
 /* BASE */
 @layer base {

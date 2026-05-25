@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -15,21 +15,33 @@ import {
   Upload,
   Users,
   X,
+  Sparkles,
+  BookOpen,
+  Award,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { subscribeToMatches } from "../services/matchService";
 import { updateUserProfile, uploadAvatar } from "../services/userService";
 import SkillBadge from "../components/SkillBadge";
 import UserAvatar, { hasRealAvatar } from "../components/UserAvatar";
 
-function StatCard({ icon: Icon, value, label, tone = "text-primary" }) {
+function StatCard({ icon: Icon, value, label, tone = "text-[#e2593b]", isDark }) {
   return (
-    <div className="rounded-2xl border border-base-300/70 bg-base-100 p-4 shadow-sm">
-      <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-base-200 ${tone}`}>
-        <Icon size={18} />
+    <div className={`rounded-2xl border p-5 transition-all duration-300 ${
+      isDark 
+        ? "bg-white/[0.01] border-white/[0.06] shadow-md shadow-black/20" 
+        : "bg-neutral-900/[0.01] border-neutral-900/[0.06] shadow-sm"
+    }`}>
+      <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl ${
+        isDark ? "bg-white/[0.03]" : "bg-neutral-900/[0.03]"
+      } ${tone}`}>
+        <Icon size={16} />
       </div>
-      <div className="text-2xl font-bold leading-none">{value}</div>
-      <div className="mt-1 text-xs font-medium uppercase tracking-wide text-base-content/45">
+      <div className="text-2xl font-black tracking-tight leading-none">{value}</div>
+      <div className={`mt-2 text-[10px] font-bold uppercase tracking-widest ${
+        isDark ? "text-neutral-500" : "text-neutral-400"
+      }`}>
         {label}
       </div>
     </div>
@@ -76,6 +88,7 @@ function parseSkills(value) {
 
 export default function ProfilePage() {
   const { user, profile, loading, refreshProfile } = useAuth();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [tab, setTab] = useState("skills");
@@ -178,58 +191,69 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-200">
-        <Loader2 className="animate-spin text-primary" size={36} />
+      <div className={`flex-1 h-screen flex items-center justify-center transition-colors duration-300 ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
+        <Loader2 className="animate-spin text-[#e2593b]" size={36} />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md rounded-2xl border border-base-300 bg-base-100 p-8 text-center shadow-xl"
-        >
-          <h1 className="text-2xl font-bold mb-2">You are not logged in</h1>
-          <p className="text-base-content/60 mb-6">
-            Please login to view your profile.
+      <div className={`flex-1 h-screen flex items-center justify-center px-6 transition-colors duration-300 ${isDark ? "bg-[#0b0b0b] text-white" : "bg-[#fcfcfc] text-neutral-900"}`}>
+        <div className={`text-center max-w-sm p-8 rounded-[32px] border ${isDark ? "border-white/[0.06] bg-white/[0.01]" : "border-neutral-900/[0.06] bg-neutral-900/[0.01] shadow-xl"}`}>
+          <div className="w-12 h-12 rounded-2xl bg-[#e2593b]/10 flex items-center justify-center mx-auto mb-5 text-[#e2593b]">
+            <Sparkles size={22} />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight mb-2">Sign in to profile</h1>
+          <p className={`text-xs font-medium leading-relaxed mb-6 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+            Log in to adjust your collaborative credentials, sync nodes, and customize your skill index parameters.
           </p>
           <button
             onClick={() => navigate("/login")}
-            className="btn btn-primary w-full flex items-center gap-2 justify-center"
+            className={`w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-[0.98] ${
+              isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+            }`}
           >
-            <LogIn size={18} />
+            <LogIn size={14} />
             Go to Login
           </button>
-        </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-base-200 px-4 py-10">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <section className="overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-xl">
-          <div className="h-28 bg-gradient-to-r from-slate-950 via-indigo-700 to-cyan-500" />
-          <div className="px-6 pb-6">
-            <div className="-mt-16 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                <div className="relative w-fit">
+    <div className={`flex-1 min-h-0 overflow-y-auto transition-colors duration-300 border-t ${
+      isDark ? "bg-[#0b0b0b] text-white border-white/[0.04]" : "bg-[#fcfcfc] text-neutral-900 border-neutral-900/[0.04]"
+    }`}>
+      <div className="mx-auto max-w-5xl px-6 py-10 space-y-6">
+        
+        {/* CORE PROFILE PLINTH MODULE */}
+        <section className={`overflow-hidden rounded-[32px] border transition-all duration-300 ${
+          isDark ? "bg-white/[0.01] border-white/[0.06] shadow-xl shadow-black/40" : "bg-neutral-900/[0.01] border-neutral-900/[0.06] shadow-sm"
+        }`}>
+          {/* Subtle tech aesthetic top pipeline header line instead of thick gradient banner */}
+          <div className="h-[4px] bg-gradient-to-r from-[#e2593b] via-indigo-500 to-cyan-500" />
+          
+          <div className="p-6 md:p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div className="relative w-fit shrink-0">
                   <UserAvatar
                     user={{ ...displayProfile, avatar: form.avatar || displayProfile.avatar }}
                     size="2xl"
-                    className="ring-4 ring-base-100"
+                    className={`ring-4 ${isDark ? "ring-[#0b0b0b]" : "ring-[#fcfcfc]"} rounded-[24px]`}
                   />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="btn btn-circle btn-sm absolute bottom-1 right-1 bg-base-100 shadow-md"
-                    title="Upload photo"
+                    className={`absolute bottom-[-4px] right-[-4px] w-8 h-8 rounded-xl flex items-center justify-center border shadow-lg transition-transform active:scale-90 ${
+                      isDark ? "bg-white border-neutral-200 text-black hover:bg-neutral-100" : "bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
+                    }`}
+                    title="Upload node signature photo"
                   >
-                    {uploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+                    {uploading ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
                   </button>
                   <input
                     ref={fileInputRef}
@@ -240,28 +264,31 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <div className="min-w-0 pb-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-3xl font-bold leading-tight">{displayProfile.name}</h1>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h1 className="text-2xl font-black tracking-tight uppercase tracking-wide">{displayProfile.name}</h1>
                     {hasRealAvatar(displayProfile.avatar) && (
-                      <span className="badge badge-success gap-1">
-                        <Check size={12} />
-                        Photo
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        <Check size={10} />
+                        Verified Face
                       </span>
                     )}
                   </div>
 
-                  <p className="mt-1 flex items-center gap-2 text-sm text-base-content/60">
-                    <MapPin size={14} />
-                    {displayProfile.location || "No location"}
-                  </p>
-                  <p className="mt-1 flex items-center gap-2 text-sm text-base-content/60">
-                    <Calendar size={14} />
-                    Joined {formatJoinedDate(displayProfile.createdAt)}
-                  </p>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-medium">
+                    <p className={`flex items-center gap-1.5 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+                      <MapPin size={13} className="text-[#e2593b]" />
+                      {displayProfile.location || "Cluster Coordinate Unset"}
+                    </p>
+                    <p className={`flex items-center gap-1.5 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+                      <Calendar size={13} className={isDark ? "text-neutral-500" : "text-neutral-400"} />
+                      Indexed {formatJoinedDate(displayProfile.createdAt)}
+                    </p>
+                  </div>
                 </div>
               </div>
 
+              {/* ACTION TOGGLES */}
               <div className="flex flex-wrap gap-2">
                 {edit ? (
                   <>
@@ -271,19 +298,23 @@ export default function ProfilePage() {
                         setEdit(false);
                         setError("");
                       }}
-                      className="btn btn-outline btn-sm gap-2"
+                      className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                        isDark ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
+                      }`}
                     >
-                      <X size={14} />
+                      <X size={13} />
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={handleSave}
                       disabled={saving}
-                      className="btn btn-vibrant-primary btn-sm gap-2"
+                      className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                        isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+                      }`}
                     >
-                      {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                      Save
+                      {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                      Commit
                     </button>
                   </>
                 ) : (
@@ -294,93 +325,132 @@ export default function ProfilePage() {
                       setSaved(false);
                       setError("");
                     }}
-                    className="btn btn-vibrant-primary btn-sm gap-2"
+                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                      isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+                    }`}
                   >
-                    <Edit3 size={14} />
-                    Edit Profile
+                    <Edit3 size={13} />
+                    Configure Node
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_320px]">
-              <div>
+            {/* FORM FIELD STRUCTURAL GRIDS */}
+            <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_280px]">
+              <div className="min-w-0">
                 {edit ? (
                   <div className="grid gap-4 md:grid-cols-2">
-                    <label className="form-control">
-                      <span className="label-text mb-1 font-medium">Name</span>
+                    <label className="flex flex-col gap-1.5">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>Identity Label</span>
                       <input
                         value={form.name}
                         onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))}
-                        className="input input-bordered"
+                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all ${
+                          isDark 
+                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
+                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
+                        }`}
                         maxLength={80}
                       />
                     </label>
-                    <label className="form-control">
-                      <span className="label-text mb-1 font-medium">Location</span>
+                    <label className="flex flex-col gap-1.5">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>Geographic Sector</span>
                       <input
                         value={form.location}
                         onChange={(e) => setForm((current) => ({ ...current, location: e.target.value }))}
-                        className="input input-bordered"
+                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all ${
+                          isDark 
+                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
+                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
+                        }`}
                         maxLength={100}
                       />
                     </label>
-                    <label className="form-control md:col-span-2">
-                      <span className="label-text mb-1 font-medium">Bio</span>
+                    <label className="flex flex-col gap-1.5 md:col-span-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>Biography Blueprint</span>
                       <textarea
                         value={form.bio}
                         onChange={(e) => setForm((current) => ({ ...current, bio: e.target.value }))}
-                        className="textarea textarea-bordered min-h-24"
+                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all min-h-[80px] resize-none ${
+                          isDark 
+                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
+                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
+                        }`}
                         maxLength={500}
                       />
                     </label>
-                    <label className="form-control">
-                      <span className="label-text mb-1 font-medium">Can teach</span>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#e2593b] flex items-center gap-1">
+                        <Award size={11} /> Outbound Capabilities (Can Teach)
+                      </span>
                       <textarea
                         value={form.skillsOffered}
                         onChange={(e) => setForm((current) => ({ ...current, skillsOffered: e.target.value }))}
-                        className="textarea textarea-bordered min-h-24"
-                        placeholder="React, Excel, Photography"
+                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all min-h-[90px] resize-none placeholder-neutral-500 ${
+                          isDark 
+                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
+                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
+                        }`}
+                        placeholder="React, Assembly, Shell Scripting"
                       />
                     </label>
-                    <label className="form-control">
-                      <span className="label-text mb-1 font-medium">Wants to learn</span>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 flex items-center gap-1">
+                        <BookOpen size={11} /> Inbound Demands (Wants To Learn)
+                      </span>
                       <textarea
                         value={form.skillsWanted}
                         onChange={(e) => setForm((current) => ({ ...current, skillsWanted: e.target.value }))}
-                        className="textarea textarea-bordered min-h-24"
-                        placeholder="Public speaking, Python, Design"
+                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all min-h-[90px] resize-none placeholder-neutral-500 ${
+                          isDark 
+                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
+                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
+                        }`}
+                        placeholder="Queuing Theory, Python, UI Design"
                       />
                     </label>
                   </div>
                 ) : (
-                  <p className="max-w-2xl text-sm leading-6 text-base-content/70">
-                    {displayProfile.bio || "No bio yet"}
-                  </p>
+                  <div className="space-y-2">
+                    <h4 className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>Biography Summary</h4>
+                    <p className={`text-xs font-medium leading-relaxed max-w-2xl ${isDark ? "text-neutral-300" : "text-neutral-600"}`}>
+                      {displayProfile.bio || "No summary initialized for this deployment profile node yet."}
+                    </p>
+                  </div>
                 )}
 
                 <AnimatePresence>
                   {(error || saved) && (
                     <motion.div
-                      initial={{ opacity: 0, y: -6 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      className={`mt-4 alert ${error ? "alert-error" : "alert-success"}`}
+                      exit={{ opacity: 0, y: 6 }}
+                      className={`mt-4 p-3.5 rounded-xl text-xs font-medium flex items-center gap-2 border ${
+                        error 
+                          ? "bg-rose-500/10 text-rose-500 border-rose-500/20" 
+                          : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                      }`}
                     >
-                      {error ? <X size={18} /> : <Check size={18} />}
-                      <span>{error || "Profile updated"}</span>
+                      {error ? <X size={14} /> : <Check size={14} />}
+                      <span className="font-mono">{error || "System logs updated successfully."}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              <div className="rounded-2xl border border-base-300 bg-base-200/70 p-4">
-                <div className="flex items-center gap-3">
-                  <Upload className="text-primary" size={20} />
+              {/* FLOATING ACTION MINI PANEL */}
+              <div className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
+                isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-900/[0.02] border-neutral-900/[0.06]"
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-[#e2593b]/10 text-[#e2593b] shrink-0">
+                    <Upload size={14} />
+                  </div>
                   <div>
-                    <p className="font-semibold">Profile photo</p>
-                    <p className="text-xs text-base-content/55">
-                      JPG, PNG, or WebP under 3 MB.
+                    <p className="text-xs font-bold tracking-tight uppercase tracking-wider">Node Payload</p>
+                    <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                      JPG, PNG, or WebP architecture footprints matching under 3 MB bounds.
                     </p>
                   </div>
                 </div>
@@ -388,34 +458,46 @@ export default function ProfilePage() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="btn btn-outline btn-sm mt-4 w-full gap-2"
+                  className={`mt-4 w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                    isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-950"
+                  }`}
                 >
-                  {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
-                  Upload Photo
+                  {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                  Transmit Matrix Image
                 </button>
               </div>
             </div>
           </div>
         </section>
 
+        {/* CLUSTER INTELLIGENCE STATS MATRIX */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatCard icon={Users} value={String(matchCount)} label="Matches" tone="text-blue-500" />
-          <StatCard icon={Upload} value={hasRealAvatar(displayProfile.avatar) ? "Yes" : "No"} label="Photo" tone="text-cyan-500" />
-          <StatCard icon={Star} value="5.0" label="Rating" tone="text-amber-500" />
-          <StatCard icon={TrendingUp} value="0" label="Reviews" tone="text-green-500" />
+          <StatCard icon={Users} value={String(matchCount)} label="Pipelines Connected" tone="text-blue-500" isDark={isDark} />
+          <StatCard icon={Upload} value={hasRealAvatar(displayProfile.avatar) ? "Active" : "Null"} label="Avatar Status" tone="text-cyan-500" isDark={isDark} />
+          <StatCard icon={Star} value="5.0" label="Symmetry Weight" tone="text-amber-500" isDark={isDark} />
+          <StatCard icon={TrendingUp} value="0" label="Appraisal Logs" tone="text-emerald-500" isDark={isDark} />
         </div>
 
-        <section className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
-          <div className="mb-5 flex gap-2">
+        {/* TABS DIRECTORY STRUCTURE BLOCK */}
+        <section className={`rounded-[24px] border p-5 transition-all duration-300 ${
+          isDark ? "bg-white/[0.01] border-white/[0.06]" : "bg-neutral-900/[0.01] border-neutral-900/[0.06]"
+        }`}>
+          <div className="mb-6 flex gap-1.5 p-1 rounded-xl w-fit bg-transparent">
             {["skills", "reviews"].map((item) => (
               <button
                 key={item}
                 onClick={() => setTab(item)}
-                className={`btn btn-sm rounded-xl ${
-                  tab === item ? "btn-primary" : "btn-ghost bg-base-200"
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 ${
+                  tab === item 
+                    ? isDark 
+                      ? "bg-white text-black shadow-md shadow-black/20" 
+                      : "bg-neutral-950 text-white shadow-sm"
+                    : isDark
+                      ? "text-neutral-400 hover:text-white hover:bg-white/[0.03]"
+                      : "text-neutral-500 hover:text-neutral-950 hover:bg-neutral-900/[0.03]"
                 }`}
               >
-                {item === "skills" ? "Skills" : "Reviews"}
+                {item === "skills" ? "Index Protocols" : "Feedback Pipelines"}
               </button>
             ))}
           </div>
@@ -424,18 +506,18 @@ export default function ProfilePage() {
             {tab === "skills" && (
               <motion.div
                 key="skills"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
                 className="grid gap-6 md:grid-cols-2"
               >
                 <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-base-content/45">
-                    Can teach
+                  <p className={`mb-3 text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                    Outbound Teach Vectors
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {(displayProfile.skillsOffered || []).length === 0 ? (
-                      <p className="text-sm text-base-content/50">No skills listed yet</p>
+                      <p className={`text-xs font-medium font-mono ${isDark ? "text-white/20" : "text-neutral-400"}`}>No vectors declared.</p>
                     ) : (
                       displayProfile.skillsOffered.map((skill) => (
                         <SkillBadge key={skill} skill={skill} variant="offered" />
@@ -445,12 +527,12 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-base-content/45">
-                    Wants to learn
+                  <p className={`mb-3 text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                    Inbound Acquisition Targets
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {(displayProfile.skillsWanted || []).length === 0 ? (
-                      <p className="text-sm text-base-content/50">No skills listed yet</p>
+                      <p className={`text-xs font-medium font-mono ${isDark ? "text-white/20" : "text-neutral-400"}`}>No targets declared.</p>
                     ) : (
                       displayProfile.skillsWanted.map((skill) => (
                         <SkillBadge key={skill} skill={skill} variant="wanted" />
@@ -464,12 +546,20 @@ export default function ProfilePage() {
             {tab === "reviews" && (
               <motion.div
                 key="reviews"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                className="py-8 text-center text-base-content/50"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className={`py-12 text-center rounded-2xl border border-dashed flex flex-col items-center justify-center ${
+                  isDark ? "border-white/[0.06] text-white/30" : "border-neutral-900/[0.06] text-neutral-400"
+                }`}
               >
-                <p>No reviews yet. Complete skill sessions to receive feedback.</p>
+                <div className="w-9 h-9 rounded-xl bg-neutral-500/10 flex items-center justify-center mb-3 opacity-60">
+                  <TrendingUp size={14} />
+                </div>
+                <p className="text-xs font-medium">Zero transaction receipts indexed.</p>
+                <p className={`text-[10px] font-medium mt-1 ${isDark ? "text-neutral-600" : "text-neutral-400"}`}>
+                  Conclude localized skill-swaps via cluster pipelines to inherit active appraisal data records.
+                </p>
               </motion.div>
             )}
           </AnimatePresence>

@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Zap, X, Heart, LogIn, Loader2, MessageCircle } from "lucide-react";
+import { RotateCcw, Zap, X, Heart, LogIn, Loader2, MessageCircle, Sparkles, MapPin } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { getUsersForSwipe, getUserProfile } from "../services/userService";
 import {
   getPeerUidFromMatch,
@@ -17,6 +18,7 @@ import UserAvatar from "../components/UserAvatar";
 
 export default function SwipePage() {
   const { user, profile, loading: authLoading } = useAuth();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
 
   const [users, setUsers] = useState([]);
@@ -137,25 +139,30 @@ export default function SwipePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100">
-        <Loader2 className="animate-spin text-primary" size={40} />
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
+        <Loader2 className="animate-spin text-[#e2593b]" size={36} />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100 px-4">
-        <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold mb-2">Sign in to discover</h1>
-          <p className="text-base-content/60 mb-6">
-            Create an account to swipe and match with other learners.
+      <div className={`min-h-screen flex items-center justify-center px-6 transition-colors duration-300 ${isDark ? "bg-[#0b0b0b] text-white" : "bg-[#fcfcfc] text-neutral-900"}`}>
+        <div className={`text-center max-w-sm p-8 rounded-[32px] border ${isDark ? "border-white/[0.06] bg-white/[0.01]" : "border-neutral-900/[0.06] bg-neutral-900/[0.01] shadow-xl"}`}>
+          <div className="w-12 h-12 rounded-2xl bg-[#e2593b]/10 flex items-center justify-center mx-auto mb-5 text-[#e2593b]">
+            <Sparkles size={22} />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight mb-2">Sign in to discover</h1>
+          <p className={`text-xs font-medium leading-relaxed mb-6 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+            Create an account to swipe, verify stack competencies, and match with other technical builders.
           </p>
           <button
             onClick={() => navigate("/login")}
-            className="btn btn-vibrant-primary gap-2"
+            className={`w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-[0.98] ${
+              isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+            }`}
           >
-            <LogIn size={18} />
+            <LogIn size={14} />
             Go to Login
           </button>
         </div>
@@ -164,72 +171,89 @@ export default function SwipePage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-100 text-base-content relative overflow-hidden px-4 py-10">
-      <div className="absolute top-0 left-1/3 w-[500px] h-[500px] bg-primary/20 blur-3xl rounded-full" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-secondary/20 blur-3xl rounded-full" />
+    <div className={`min-h-screen relative overflow-hidden pt-28 pb-16 px-6 lg:px-16 transition-colors duration-300 ${
+      isDark ? "bg-[#0b0b0b] text-white" : "bg-[#fcfcfc] text-neutral-900"
+    }`}>
+      {/* BACKGROUND GRAPHIC ORBS */}
+      <div className="absolute top-[-10%] left-1/4 w-[600px] h-[600px] bg-[#e2593b]/[0.03] blur-[140px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-purple-500/[0.02] blur-[140px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold">
-            Find Your <span className="text-gradient">Skill Match</span>
+      <div className="max-w-6xl mx-auto relative z-10">
+        
+        {/* HEADER BRAND CONTROL MATRIX */}
+        <div className="text-center mb-14">
+          <span className="text-xs font-bold text-[#e2593b] uppercase tracking-widest block mb-2">
+            Discovery Engine
+          </span>
+          <h1 className="text-4xl lg:text-5xl font-black tracking-tighter leading-none">
+            Find Your <span className="text-[#e2593b]">Skill Match.</span>
           </h1>
-          <p className="text-base-content/60 mt-3">Swipe, connect, and grow together</p>
-          <p className="text-sm text-base-content/40 mt-2">
-            {usersLoading
-              ? "Loading profiles..."
-              : deckMeta
-                ? `${users.length} to swipe · ${deckMeta.otherUsersCount} other member${deckMeta.otherUsersCount === 1 ? "" : "s"} on SkillSwap`
-                : `${users.length} profiles available`}
+          <p className={`text-sm font-medium mt-3 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+            Swipe vectors, verify alignments, and collaborate.
           </p>
+          <div className="inline-flex items-center gap-2 mt-4 px-3 py-1 rounded-full border text-[11px] font-mono font-medium tracking-tight bg-neutral-500/5 border-neutral-500/10">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className={isDark ? "text-neutral-400" : "text-neutral-500"}>
+              {usersLoading
+                ? "Compiling Index Node..."
+                : deckMeta
+                  ? `${users.length} available · ${deckMeta.otherUsersCount} member${deckMeta.otherUsersCount === 1 ? "" : "s"} online`
+                  : `${users.length} nodes ready`}
+            </span>
+          </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-10 justify-center">
-          <div className="w-full max-w-md flex flex-col items-center">
-            <div className="relative w-full h-[620px]">
-              <AnimatePresence>
+        {/* CONTAINER LAYOUT GRID */}
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start max-w-5xl mx-auto">
+          
+          {/* LEFT INTERACTION DECK PORTAL */}
+          <div className="lg:col-span-6 flex flex-col items-center">
+            <div className="relative w-full max-w-[380px] h-[540px]">
+              <AnimatePresence mode="wait">
                 {usersLoading ? (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-primary" size={40} />
+                    <Loader2 className="animate-spin text-[#e2593b]" size={32} />
                   </div>
                 ) : users.length === 0 ? (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="absolute inset-0 glass rounded-[32px] flex flex-col items-center justify-center text-center p-10"
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    className={`absolute inset-0 rounded-[32px] border p-8 flex flex-col items-center justify-center text-center ${
+                      isDark ? "border-white/[0.06] bg-white/[0.01]" : "border-neutral-900/[0.06] bg-neutral-900/[0.01]"
+                    }`}
                   >
-                    <div className="text-6xl mb-4">
-                      {loadError ? "⚠️" : deckMeta?.otherUsersCount === 0 ? "👋" : "🎉"}
+                    <div className="text-4xl mb-4">
+                      {loadError ? "⚠️" : deckMeta?.otherUsersCount === 0 ? "⚡" : "✨"}
                     </div>
-                    <h2 className="text-2xl font-bold mb-2">
+                    <h2 className="text-lg font-bold tracking-tight mb-2">
                       {loadError
-                        ? "Could not load profiles"
+                        ? "Pipeline Failure"
                         : deckMeta?.otherUsersCount === 0
-                          ? "No one else to swipe yet"
-                          : "No more profiles in your deck"}
+                          ? "Isolated Node Container"
+                          : "End of Stream Index"}
                     </h2>
-                    <p className="text-base-content/60 mb-6 text-sm leading-relaxed max-w-xs">
+                    <p className={`text-xs font-medium leading-relaxed mb-6 max-w-[260px] ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
                       {loadError ? (
                         loadError
                       ) : deckMeta?.otherUsersCount === 0 ? (
                         <>
-                          Only your account exists in the database. Create a{" "}
-                          <strong>second account</strong> (incognito / another browser), sign up,
-                          then refresh here.
+                          No alternative indices discovered. Create a second account container in an incognito window to verify peer alignment.
                         </>
                       ) : (
                         <>
-                          You already liked or matched {deckMeta?.hiddenCount ?? 0} member
-                          {deckMeta?.hiddenCount === 1 ? "" : "s"}. Skipped profiles will reappear
-                          after refresh.
+                          You have parsed through the active deck queue parameters. Refreshed skips will reappear inside your registry.
                         </>
                       )}
                     </p>
                     <button
                       onClick={loadSwipeDeck}
-                      className="btn btn-vibrant-primary rounded-2xl font-semibold gap-2"
+                      className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-transform active:scale-[0.97] ${
+                        isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+                      }`}
                     >
-                      <RotateCcw size={16} />
-                      Refresh
+                      <RotateCcw size={12} />
+                      Reload Stack
                     </button>
                   </motion.div>
                 ) : (
@@ -241,10 +265,12 @@ export default function SwipePage() {
                       return (
                         <div
                           key={swipeUser.uid}
-                          className="absolute w-full h-full"
+                          className="absolute w-full h-full transition-all duration-300 ease-out"
                           style={{
-                            transform: `scale(${1 - index * 0.04}) translateY(${index * 12}px)`,
+                            transform: `scale(${1 - index * 0.035}) translateY(${index * 10}px)`,
                             zIndex: 10 - index,
+                            opacity: index === 0 ? 1 : 0.4 / index,
+                            pointerEvents: index === 0 ? "auto" : "none"
                           }}
                         >
                           <SwipeCard
@@ -260,49 +286,76 @@ export default function SwipePage() {
               </AnimatePresence>
             </div>
 
-            <div className="flex items-center gap-4 mt-8">
+            {/* ACTION TRIGGERS MATRIX PANEL */}
+            <div className="flex items-center gap-4 mt-8 w-full max-w-[380px] justify-center">
               <button
                 onClick={() => handleSwipe("skip")}
                 disabled={!users.length || swiping}
-                className="btn btn-vibrant-error gap-2 font-semibold disabled:opacity-40"
+                className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
+                  isDark 
+                    ? "border-white/[0.08] bg-white/[0.02] text-red-400 hover:bg-red-500/10 hover:border-red-500/30" 
+                    : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-red-500 hover:bg-red-500/5 hover:border-red-500/20 shadow-sm"
+                }`}
+                title="Reject Node"
               >
-                <X size={16} />
-                Reject
+                <X size={20} />
               </button>
 
               <button
                 onClick={handleUndo}
                 disabled={!history.length || swiping}
-                className="btn btn-icon-vibrant bg-slate-400 hover:bg-slate-500 text-white disabled:opacity-40"
+                className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
+                  isDark 
+                    ? "border-white/[0.08] bg-white/[0.02] text-neutral-400 hover:text-white" 
+                    : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-neutral-500 hover:text-neutral-900 shadow-sm"
+                }`}
+                title="Undo Action"
               >
-                <RotateCcw size={18} />
+                <RotateCcw size={15} />
               </button>
 
               <button
                 onClick={() => handleSwipe("like")}
                 disabled={!users.length || swiping}
-                className="btn btn-vibrant-success gap-2 font-semibold disabled:opacity-40"
+                className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
+                  isDark 
+                    ? "border-white/[0.08] bg-white/[0.02] text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30" 
+                    : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/20 shadow-sm"
+                }`}
+                title="Authorize Connection"
               >
-                <Heart size={16} />
-                Accept
+                <Heart size={20} className="fill-current" />
               </button>
             </div>
           </div>
 
-          <div className="w-full max-w-sm">
-            <div className="glass rounded-[32px] p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <Zap className="text-primary" />
-                <h3 className="font-bold text-lg">Matches</h3>
-                <span className="ml-auto text-sm text-base-content/50">
+          {/* RIGHT SIDEBAR - REALTIME MATCH MATRIX FEED */}
+          <div className="lg:col-span-6">
+            <div className={`rounded-[32px] border p-6 lg:p-8 transition-colors ${
+              isDark 
+                ? "border-white/[0.06] bg-white/[0.01]" 
+                : "border-neutral-900/[0.06] bg-neutral-900/[0.01] shadow-xl shadow-neutral-200/40"
+            }`}>
+              <div className="flex items-center gap-3 mb-6 border-b border-neutral-500/5 pb-4">
+                <div className="w-7 h-7 rounded-lg bg-[#e2593b]/10 flex items-center justify-center text-[#e2593b]">
+                  <Zap size={14} className="fill-current" />
+                </div>
+                <h3 className="font-bold text-sm uppercase tracking-wider">Verified Connections</h3>
+                <span className={`ml-auto text-xs font-mono font-bold px-2 py-0.5 rounded-md ${
+                  isDark ? "bg-white/5 text-neutral-300" : "bg-neutral-950/5 text-neutral-600"
+                }`}>
                   {matches.length}
                 </span>
               </div>
 
               {matches.length === 0 ? (
-                <p className="text-base-content/40 text-sm">No matches yet</p>
+                <div className="text-center py-16">
+                  <p className={`text-xs font-medium ${isDark ? "text-white/30" : "text-neutral-400"}`}>
+                    No concurrent pipelines established yet.
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-3 max-h-[500px] overflow-auto pr-2">
+                <div className="space-y-3 max-h-[420px] overflow-auto pr-1">
                   {matches.map((match) => {
                     const peer = matchProfiles[match.id];
                     if (!peer) return null;
@@ -310,21 +363,34 @@ export default function SwipePage() {
                     return (
                       <div
                         key={match.id}
-                        className="flex items-center gap-3 p-3 rounded-2xl bg-base-200/60 hover:bg-base-200 transition"
+                        className={`flex items-center gap-4 p-3 rounded-2xl border transition-all ${
+                          isDark 
+                            ? "border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.08]" 
+                            : "border-neutral-900/[0.04] bg-[#fdfdfd] hover:bg-neutral-50 hover:border-neutral-900/[0.08]"
+                        }`}
                       >
-                        <UserAvatar user={peer} size="lg" className="rounded-2xl" />
+                        <UserAvatar user={peer} size="lg" className="rounded-xl border border-neutral-500/10 flex-shrink-0" />
+                        
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold truncate">{peer.name}</p>
-                          <p className="text-xs text-base-content/50 truncate">
-                            {peer.location || "SkillSwap member"}
+                          <p className="font-bold text-sm tracking-tight truncate">{peer.name}</p>
+                          <p className={`text-xs font-medium flex items-center gap-1.5 mt-0.5 truncate ${
+                            isDark ? "text-neutral-400" : "text-neutral-500"
+                          }`}>
+                            <MapPin size={10} className="text-[#e2593b]" />
+                            {peer.location || "Cluster Network Nodes"}
                           </p>
                         </div>
+
                         <Link
                           to={`/chat?matchId=${match.id}`}
-                          className="btn btn-ghost btn-circle btn-sm text-primary"
-                          title="Message"
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                            isDark 
+                              ? "bg-white/[0.04] text-white hover:bg-white hover:text-black" 
+                              : "bg-neutral-950/[0.04] text-neutral-900 hover:bg-neutral-950 hover:text-white"
+                          }`}
+                          title="Initialize Stream Chat"
                         >
-                          <MessageCircle size={18} />
+                          <MessageCircle size={15} />
                         </Link>
                       </div>
                     );
@@ -333,34 +399,42 @@ export default function SwipePage() {
               )}
             </div>
           </div>
+
         </div>
       </div>
 
+      {/* SYSTEM EVENT ALERTS TOAST HUB */}
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            className={`fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl text-white ${
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl shadow-xl text-xs font-bold tracking-wide uppercase flex flex-col items-center justify-center z-50 text-white min-w-[220px] ${
               toast.type === "match"
-                ? "bg-primary"
+                ? "bg-[#e2593b]"
                 : toast.type === "like"
-                  ? "bg-green-500"
+                  ? "bg-emerald-600"
                   : toast.type === "error"
                     ? "bg-orange-500"
-                    : "bg-red-500"
+                    : "bg-neutral-800"
             }`}
           >
-            {toast.type === "match"
-              ? `🎉 Match with ${toast.name}!`
-              : toast.type === "like"
-                ? `❤️ Liked ${toast.name}`
-                : toast.type === "error"
-                  ? toast.name
-                  : `❌ Skipped ${toast.name}`}
+            <div className="flex items-center gap-2">
+              <span>
+                {toast.type === "match"
+                  ? `⚡ Intersect Match: ${toast.name}!`
+                  : toast.type === "like"
+                    ? `👍 Staged ${toast.name}`
+                    : toast.type === "error"
+                      ? toast.name
+                      : `🗑️ Skipped ${toast.name}`}
+              </span>
+            </div>
             {toast.extra && (
-              <span className="block text-xs opacity-90">{toast.extra}</span>
+              <span className="block text-[10px] font-medium opacity-80 mt-0.5 lowercase font-mono">
+                {toast.extra}
+              </span>
             )}
           </motion.div>
         )}

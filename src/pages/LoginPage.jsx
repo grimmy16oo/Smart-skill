@@ -9,33 +9,31 @@ import {
   Lock,
   MapPin,
   BookOpen,
-  CheckCircle,
   AlertCircle,
+  CheckCircle,
   Eye,
   EyeOff,
   Loader,
 } from "lucide-react";
 
-/* PASSWORD STRENGTH */
+/* PASSWORD STRENGTH METRIC */
 function getStrength(password) {
   let score = 0;
-
   if (password.length > 7) score++;
   if (/[A-Z]/.test(password)) score++;
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
-
   return score;
 }
 
 function StrengthBar({ password }) {
   const strength = getStrength(password);
   const labels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];
-  const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
+  const colors = ["bg-error", "bg-warning", "bg-warning", "bg-info", "bg-success"];
 
   return (
-    <div className="space-y-2">
-      <div className="w-full bg-base-300 rounded-full h-2 overflow-hidden">
+    <div className="space-y-1.5 mt-1">
+      <div className="w-full bg-base-300 dark:bg-neutral rounded-full h-1 overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${(strength / 4) * 100}%` }}
@@ -43,15 +41,14 @@ function StrengthBar({ password }) {
           className={`h-full ${colors[strength] || colors[0]}`}
         />
       </div>
-
-      <p className="text-xs font-medium text-base-content/60">
-        {password ? labels[strength] : "Enter a password"}
+      <p className="text-[11px] font-medium text-base-content/50">
+        {password ? `Strength: ${labels[strength]}` : "Enter a password"}
       </p>
     </div>
   );
 }
 
-/* INPUT WITH VALIDATION */
+/* CUSTOM THEME-AWARE INPUT */
 function Input({
   icon,
   value,
@@ -65,9 +62,9 @@ function Input({
   onTogglePassword,
 }) {
   return (
-    <div className="space-y-1">
-      <label className="label pb-1">
-        <span className="label-text font-medium flex items-center gap-2">
+    <div className="form-control w-full space-y-1.5">
+      <label className="label py-0 pl-0">
+        <span className="text-xs font-semibold tracking-wide text-base-content/80 flex items-center gap-1.5">
           {icon}
           {placeholder}
           {required && <span className="text-error">*</span>}
@@ -79,9 +76,11 @@ function Input({
           type={showToggle && showPassword ? "text" : type}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={placeholder}
-          className={`input input-bordered w-full pr-10 transition-colors ${
-            error ? "input-error" : "focus:input-primary"
+          placeholder={`Enter your ${placeholder.toLowerCase()}`}
+          className={`input w-full bg-base-200/50 dark:bg-[#121212] border text-sm text-base-content dark:text-white placeholder-base-content/30 transition-all duration-200 focus:outline-none rounded-lg h-11 ${
+            error 
+              ? "border-error focus:border-error" 
+              : "border-base-300 dark:border-neutral hover:border-base-content/20 focus:border-[#C06B51]"
           }`}
         />
 
@@ -89,22 +88,24 @@ function Input({
           <button
             type="button"
             onClick={onTogglePassword}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content transition"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content dark:hover:text-white transition-colors"
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         )}
 
-        {error && <AlertCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-error" />}
+        {error && !showToggle && (
+          <AlertCircle size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-error" />
+        )}
       </div>
 
       <AnimatePresence>
         {error && (
           <motion.p
-            initial={{ opacity: 0, y: -5 }}
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            className="text-xs text-error font-medium"
+            exit={{ opacity: 0, y: -4 }}
+            className="text-[11px] text-error font-medium pl-0.5"
           >
             {error}
           </motion.p>
@@ -114,19 +115,12 @@ function Input({
   );
 }
 
-/* TEXTAREA */
-function Textarea({
-  icon,
-  value,
-  setValue,
-  placeholder,
-  error,
-  required,
-}) {
+/* CUSTOM THEME-AWARE TEXTAREA */
+function Textarea({ icon, value, setValue, placeholder, error, required }) {
   return (
-    <div className="space-y-1">
-      <label className="label pb-1">
-        <span className="label-text font-medium flex items-center gap-2">
+    <div className="form-control w-full space-y-1.5">
+      <label className="label py-0 pl-0">
+        <span className="text-xs font-semibold tracking-wide text-base-content/80 flex items-center gap-1.5">
           {icon}
           {placeholder}
           {required && <span className="text-error">*</span>}
@@ -136,20 +130,22 @@ function Textarea({
       <textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        className={`textarea textarea-bordered w-full transition-colors ${
-          error ? "textarea-error" : "focus:textarea-primary"
+        placeholder={`Tell us a little bit about yourself...`}
+        className={`textarea w-full bg-base-200/50 dark:bg-[#121212] border text-sm text-base-content dark:text-white placeholder-base-content/30 transition-all duration-200 focus:outline-none rounded-lg resize-none p-3 line-clamp-3 ${
+          error 
+            ? "border-error focus:border-error" 
+            : "border-base-300 dark:border-neutral hover:border-base-content/20 focus:border-[#C06B51]"
         }`}
-        rows={3}
+        rows={2}
       />
 
       <AnimatePresence>
         {error && (
           <motion.p
-            initial={{ opacity: 0, y: -5 }}
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            className="text-xs text-error font-medium"
+            exit={{ opacity: 0, y: -4 }}
+            className="text-[11px] text-error font-medium pl-0.5"
           >
             {error}
           </motion.p>
@@ -158,6 +154,7 @@ function Textarea({
     </div>
   );
 }
+
 export default function LoginPage() {
   const { user, register, login } = useAuth();
   const navigate = useNavigate();
@@ -166,7 +163,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // FORM
+  // LOGIC INPUT STATES
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -174,44 +171,38 @@ export default function LoginPage() {
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
 
-  // UI
+  // HANDLING STATUS STATES
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
 
-  // REDIRECT IF LOGGED IN
   useEffect(() => {
     if (user) {
       navigate("/swipe");
     }
   }, [user, navigate]);
 
-  // VALIDATION
   const validateForm = () => {
     const newErrors = {};
-
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!email) {
       newErrors.email = "Email is required";
     } else if (!emailRegex.test(email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = "Please enter a valid email address";
     }
 
-    // Password validation
     if (!password) {
       newErrors.password = "Password is required";
     } else if (password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
     }
 
-    // Login-specific validation
-    if (isLogin) {
-      // Login only needs email and password
-    } else {
-      // Signup-specific validation
+    if (!isLogin) {
       if (!name.trim()) {
         newErrors.name = "Full name is required";
+      } else if (name.length < 2) {
+        newErrors.name = "Name must be at least 2 characters";
       }
 
       if (!confirmPassword) {
@@ -220,16 +211,12 @@ export default function LoginPage() {
         newErrors.confirmPassword = "Passwords do not match";
       }
 
-      if (name && name.length < 2) {
-        newErrors.name = "Name must be at least 2 characters";
-      }
-
       if (location && location.length < 2) {
         newErrors.location = "Please enter a valid location";
       }
 
       if (bio && bio.length > 500) {
-        newErrors.bio = "Bio must be less than 500 characters";
+        newErrors.bio = "Bio must be under 500 characters";
       }
     }
 
@@ -237,25 +224,19 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage("");
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
     try {
       if (isLogin) {
-        // LOGIN
         await login(email, password);
         setSuccessMessage("Welcome back!");
-        setTimeout(() => {
-          navigate("/swipe");
-        }, 500);
+        setTimeout(() => navigate("/swipe"), 500);
       } else {
         await register(email, password, {
           name: name.trim(),
@@ -266,29 +247,25 @@ export default function LoginPage() {
           skillsWanted: [],
         });
 
-        setSuccessMessage("Account created successfully! Redirecting...");
-        setTimeout(() => {
-          navigate("/profile");
-        }, 1000);
+        setSuccessMessage("Account created successfully!");
+        setTimeout(() => navigate("/profile"), 1000);
       }
     } catch (err) {
       console.error("Auth error:", err);
-
-      // Better error messages
       let errorMessage = err.message || "Something went wrong. Please try again.";
 
       if (err.code === "auth/email-already-in-use") {
-        errorMessage = "This email is already registered. Please sign in instead.";
+        errorMessage = "This email is already registered.";
       } else if (err.code === "auth/weak-password") {
-        errorMessage = "Password is too weak. Please use a stronger password.";
+        errorMessage = "Password is too weak.";
       } else if (err.code === "auth/invalid-email") {
         errorMessage = "Invalid email address.";
       } else if (err.code === "auth/user-not-found") {
         errorMessage = "No account found with this email.";
       } else if (err.code === "auth/wrong-password") {
-        errorMessage = "Incorrect password. Please try again.";
+        errorMessage = "Incorrect password.";
       } else if (err.code === "auth/too-many-requests") {
-        errorMessage = "Too many login attempts. Please try again later.";
+        errorMessage = "Too many attempts. Try again later.";
       }
 
       setErrors({ general: errorMessage });
@@ -298,274 +275,220 @@ export default function LoginPage() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-base-100 to-base-200 pt-20 pb-10 px-4"
-    >
-      <div className="max-w-6xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-10 items-center">
-          {/* LEFT - BRANDING */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="hidden lg:flex flex-col justify-center"
-          >
-            <h1 className="text-6xl font-bold mb-4 text-primary">SkillSwap</h1>
+    <div className="min-h-screen bg-white dark:bg-black text-base-content dark:text-white flex font-sans antialiased overflow-x-hidden transition-colors duration-200">
+      
+      {/* LEFT COLUMN - EXACT HOMEPAGE GRADIENT MESH PANEL */}
+      <div 
+        className="hidden lg:flex lg:w-[45%] flex-col justify-between p-16 relative overflow-hidden bg-gradient-to-tr from-[#9E4F39] via-[#C06B51] to-[#D5856B]"
+      >
+        {/* Soft layout overlay for image texture depth */}
+        <div className="absolute inset-0 bg-black/[0.03] mix-blend-multiply pointer-events-none" />
+        
+        {/* Top Tagline Badge */}
+        <div className="z-10 self-start">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-xs font-medium tracking-wider text-white uppercase">
+            ✦ Learn • Teach • Connect
+          </span>
+        </div>
 
-            <p className="text-2xl font-semibold text-base-content mb-2">
-              {isLogin ? "Welcome Back!" : "Join the Community"}
-            </p>
+        {/* Hero Central Typography Section */}
+        <div className="z-10 max-w-xl my-auto space-y-8">
+          <h2 className="text-5xl xl:text-6xl font-serif tracking-tight text-white leading-[1.15]">
+            Find People Who Match Your Skills
+          </h2>
+          <p className="text-white/85 text-base xl:text-lg max-w-md font-light leading-relaxed">
+            SkillSwap helps people exchange knowledge, collaborate, and grow together through real human connections.
+          </p>
+        </div>
 
-            <p className="text-lg text-base-content/70 mb-8 leading-relaxed">
-              {isLogin
-                ? "Connect with fellow learners, share your skills, and grow together in our vibrant community."
-                : "Learn new skills, meet passionate people, and make meaningful connections through knowledge exchange."}
-            </p>
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle size={24} className="text-success flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-base-content">Connect with Experts</h3>
-                  <p className="text-sm text-base-content/70">Learn from experienced professionals</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <CheckCircle size={24} className="text-success flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-base-content">Share Your Knowledge</h3>
-                  <p className="text-sm text-base-content/70">Teach others and build your profile</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <CheckCircle size={24} className="text-success flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-base-content">Safe & Secure</h3>
-                  <p className="text-sm text-base-content/70">Your data is protected with industry standards</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* RIGHT - FORM */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <div className="card bg-base-100 shadow-2xl border border-base-200">
-              <div className="card-body space-y-6">
-                {/* TAB SWITCH */}
-                <div className="flex gap-2 bg-base-200 p-1 rounded-xl">
-                  <motion.button
-                    type="button"
-                    onClick={() => {
-                      setIsLogin(true);
-                      setErrors({});
-                      setSuccessMessage("");
-                    }}
-                    className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
-                      isLogin
-                        ? "bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
-                        : "text-base-content/70 hover:text-base-content"
-                    }`}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Sign In
-                  </motion.button>
-
-                  <motion.button
-                    type="button"
-                    onClick={() => {
-                      setIsLogin(false);
-                      setErrors({});
-                      setSuccessMessage("");
-                    }}
-                    className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
-                      !isLogin
-                        ? "bg-purple-500 hover:bg-purple-600 text-white shadow-lg"
-                        : "text-base-content/70 hover:text-base-content"
-                    }`}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Sign Up
-                  </motion.button>
-                </div>
-
-                {/* GENERAL ERROR */}
-                <AnimatePresence>
-                  {errors.general && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="alert alert-error gap-2"
-                    >
-                      <AlertCircle size={20} />
-                      <span>{errors.general}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* SUCCESS MESSAGE */}
-                <AnimatePresence>
-                  {successMessage && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="alert alert-success gap-2"
-                    >
-                      <CheckCircle size={20} />
-                      <span>{successMessage}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* FORM */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* SIGNUP ONLY FIELDS */}
-                  <AnimatePresence>
-                    {!isLogin && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-4"
-                      >
-                        <Input
-                          icon={<User size={18} />}
-                          value={name}
-                          setValue={setName}
-                          placeholder="Full Name"
-                          error={errors.name}
-                          required
-                        />
-
-                        <Input
-                          icon={<MapPin size={18} />}
-                          value={location}
-                          setValue={setLocation}
-                          placeholder="City, Country"
-                          error={errors.location}
-                        />
-
-                        <Textarea
-                          icon={<BookOpen size={18} />}
-                          value={bio}
-                          setValue={setBio}
-                          placeholder="Tell us about yourself (max 500 chars)"
-                          error={errors.bio}
-                        />
-
-                        <p className="text-xs text-base-content/50">{bio.length}/500</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* EMAIL */}
-                  <Input
-                    icon={<Mail size={18} />}
-                    value={email}
-                    setValue={setEmail}
-                    placeholder="Email Address"
-                    type="email"
-                    error={errors.email}
-                    required
-                  />
-
-                  {/* PASSWORD */}
-                  <Input
-                    icon={<Lock size={18} />}
-                    value={password}
-                    setValue={setPassword}
-                    placeholder="Password"
-                    type="password"
-                    error={errors.password}
-                    required
-                    showToggle
-                    showPassword={showPassword}
-                    onTogglePassword={() => setShowPassword(!showPassword)}
-                  />
-
-                  {/* PASSWORD STRENGTH - SIGNUP ONLY */}
-                  <AnimatePresence>
-                    {!isLogin && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                      >
-                        <StrengthBar password={password} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* CONFIRM PASSWORD - SIGNUP ONLY */}
-                  <AnimatePresence>
-                    {!isLogin && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                      >
-                        <Input
-                          icon={<Lock size={18} />}
-                          value={confirmPassword}
-                          setValue={setConfirmPassword}
-                          placeholder="Confirm Password"
-                          type="password"
-                          error={errors.confirmPassword}
-                          required
-                          showToggle
-                          showPassword={showConfirmPassword}
-                          onTogglePassword={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                          }
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* SUBMIT BUTTON */}
-                  <motion.button
-                    type="submit"
-                    disabled={loading}
-                    className="btn btn-vibrant-primary w-full mt-6 text-base font-semibold py-3"
-                    whileHover={!loading ? { scale: 1.02 } : {}}
-                    whileTap={!loading ? { scale: 0.98 } : {}}
-                  >
-                    {loading && <Loader size={18} className="animate-spin" />}
-                    {loading
-                      ? "Please wait..."
-                      : isLogin
-                      ? "Sign In"
-                      : "Create Account"}
-                  </motion.button>
-                </form>
-
-                {/* TERMS - SIGNUP */}
-                {!isLogin && (
-                  <p className="text-xs text-center text-base-content/60">
-                    By signing up, you agree to our{" "}
-                    <a href="#" className="link link-primary">
-                      Terms of Service
-                    </a>{" "}
-                    and{" "}
-                    <a href="#" className="link link-primary">
-                      Privacy Policy
-                    </a>
-                  </p>
-                )}
-              </div>
-            </div>
-          </motion.div>
+        {/* Bottom Platform Indicators */}
+        <div className="z-10 flex items-center gap-6 text-xs text-white/60 tracking-wider uppercase font-semibold">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> 
+            Platform Step 1
+          </span>
+          <span>•</span>
+          <span>Secure Credentials</span>
         </div>
       </div>
-    </motion.div>
+
+      {/* RIGHT COLUMN - MODERN FORM COMPONENT WITH INCREASED PADDING */}
+      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-8 py-16 sm:px-16 lg:px-24 xl:px-32 relative">
+        <div className="max-w-md w-full space-y-10">
+          
+          {/* Header Typography */}
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold tracking-tight text-base-content dark:text-white">
+              {isLogin ? "Sign In to Account" : "Sign Up Account"}
+            </h1>
+            <p className="text-sm text-base-content/60 dark:text-base-content/40">
+              {isLogin ? "Welcome back! Enter your data to continue." : "Enter your personal data to create your account."}
+            </p>
+          </div>
+
+          {/* Feedback Status Notifications */}
+          <AnimatePresence mode="wait">
+            {errors.general && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="alert alert-error bg-error/10 border-error/20 text-error text-xs py-3.5 px-4 rounded-lg flex items-start gap-2.5"
+              >
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <span>{errors.general}</span>
+              </motion.div>
+            )}
+
+            {successMessage && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="alert alert-success bg-success/10 border-success/20 text-success text-xs py-3.5 px-4 rounded-lg flex items-start gap-2.5"
+              >
+                <CheckCircle size={16} className="shrink-0 mt-0.5" />
+                <span>{successMessage}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Main Action Form Wrapper */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            
+            {/* Conditional Signup Steps Group */}
+            <AnimatePresence>
+              {!isLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-5 overflow-hidden"
+                >
+                  <Input
+                    icon={<User size={14} />}
+                    value={name}
+                    setValue={setName}
+                    placeholder="Full Name"
+                    error={errors.name}
+                    required
+                  />
+
+                  <Input
+                    icon={<MapPin size={14} />}
+                    value={location}
+                    setValue={setLocation}
+                    placeholder="Location"
+                  />
+
+                  <div className="relative">
+                    <Textarea
+                      icon={<BookOpen size={14} />}
+                      value={bio}
+                      setValue={setBio}
+                      placeholder="Bio"
+                      error={errors.bio}
+                    />
+                    <span className="absolute right-2.5 bottom-2 text-[10px] text-base-content/40 tracking-tight">
+                      {bio.length}/500
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Core Identification Credentials */}
+            <Input
+              icon={<Mail size={14} />}
+              value={email}
+              setValue={setEmail}
+              placeholder="Email"
+              type="email"
+              error={errors.email}
+              required
+            />
+
+            <div className="space-y-1">
+              <Input
+                icon={<Lock size={14} />}
+                value={password}
+                setValue={setPassword}
+                placeholder="Password"
+                type="password"
+                error={errors.password}
+                required
+                showToggle
+                showPassword={showPassword}
+                onTogglePassword={() => setShowPassword(!showPassword)}
+              />
+              {!isLogin && password && <StrengthBar password={password} />}
+            </div>
+
+            {/* Confirmation Accordion */}
+            <AnimatePresence>
+              {!isLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <Input
+                    icon={<Lock size={14} />}
+                    value={confirmPassword}
+                    setValue={setConfirmPassword}
+                    placeholder="Confirm Password"
+                    type="password"
+                    error={errors.confirmPassword}
+                    required
+                    showToggle
+                    showPassword={showConfirmPassword}
+                    onTogglePassword={() => setShowConfirmPassword(!showConfirmPassword)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Core Submit Button Trigger */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90 disabled:bg-neutral/50 disabled:text-base-content/40 font-bold transition-all duration-200 rounded-lg text-sm h-11 flex items-center justify-center gap-2 mt-8 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <Loader size={16} className="animate-spin text-neutral-content" />
+                  <span>Processing request...</span>
+                </>
+              ) : isLogin ? (
+                "Sign In"
+              ) : (
+                "Sign Up"
+              )}
+            </button>
+          </form>
+
+          {/* Bottom Switch Context Actions */}
+          <div className="text-center pt-2">
+            <p className="text-sm text-base-content/60">
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setErrors({});
+                  setSuccessMessage("");
+                }}
+                className="text-[#C06B51] font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer"
+              >
+                {isLogin ? "Sign up" : "Log in"}
+              </button>
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
   );
 }

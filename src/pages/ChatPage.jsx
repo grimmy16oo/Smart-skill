@@ -1,9 +1,22 @@
-// ChatPage - real-time messaging per match
+// ChatPage - responsive realtime messaging layout
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Send, Search, Circle, ArrowLeft, LogIn, Loader2 } from "lucide-react";
+
+import {
+  Send,
+  Search,
+  Circle,
+  ArrowLeft,
+  LogIn,
+  Loader2,
+  Sparkles,
+  MessageSquare,
+} from "lucide-react";
+
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+
 import {
   ensureChatForMatch,
   fetchMatchMessages,
@@ -15,7 +28,12 @@ import {
   normalizeSocketMessage,
   sendMessage,
 } from "../services/chatService";
-import { getPeerUidFromMatch, subscribeToMatches } from "../services/matchService";
+
+import {
+  getPeerUidFromMatch,
+  subscribeToMatches,
+} from "../services/matchService";
+
 import {
   connectSocket,
   disconnectSocket,
@@ -25,14 +43,18 @@ import {
   onChatError,
   onNewMessage,
 } from "../services/socketService";
+
 import UserAvatar from "../components/UserAvatar";
 
 const LOADING_TIMEOUT_MS = 8000;
 
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
+  const { isDark } = useTheme();
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
   const matchFromUrl = searchParams.get("matchId");
 
   const [matches, setMatches] = useState([]);
@@ -40,6 +62,7 @@ export default function ChatPage() {
   const [matchesError, setMatchesError] = useState(null);
 
   const [selectedMatchId, setSelectedMatchId] = useState(null);
+
   const [peerProfiles, setPeerProfiles] = useState({});
 
   const [messages, setMessages] = useState([]);
@@ -49,32 +72,43 @@ export default function ChatPage() {
   const [messageInput, setMessageInput] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(null);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [showSidebar, setShowSidebar] = useState(true);
 
   const messagesEndRef = useRef(null);
+
   const currentUid = user?.uid ?? null;
+
+  /* SOCKET */
 
   useEffect(() => {
     if (user?.uid) {
       connectSocket();
     }
+
     return () => disconnectSocket();
   }, [user?.uid]);
+
+  /* LOAD PEERS */
 
   const loadPeerProfile = useCallback(async (peerUid) => {
     if (!peerUid) return;
 
     const userProfile = await getUserProfile(peerUid);
+
     setPeerProfiles((prev) => {
       if (prev[peerUid]) return prev;
+
       return {
         ...prev,
         [peerUid]: userProfile
           ? {
               id: peerUid,
               name: userProfile.name || `User ${peerUid.slice(0, 6)}`,
-              avatar: userProfile.avatar || getDefaultUserProfile(peerUid).avatar,
+              avatar:
+                userProfile.avatar ||
+                getDefaultUserProfile(peerUid).avatar,
               online: false,
               unread: 0,
             }
@@ -82,6 +116,8 @@ export default function ChatPage() {
       };
     });
   }, []);
+
+  /* MATCHES */
 
   useEffect(() => {
     if (!currentUid) {
@@ -91,14 +127,16 @@ export default function ChatPage() {
     }
 
     let snapshotReceived = false;
+
     setMatchesLoading(true);
     setMatchesError(null);
 
     const timeoutId = window.setTimeout(() => {
       if (!snapshotReceived) {
         setMatchesLoading(false);
+
         setMatchesError(
-          "Could not load matches. Check that the backend and MongoDB are running."
+          "Could not load matches. Check backend + MongoDB."
         );
       }
     }, LOADING_TIMEOUT_MS);
@@ -107,17 +145,20 @@ export default function ChatPage() {
       currentUid,
       (nextMatches) => {
         snapshotReceived = true;
+
         setMatches(nextMatches);
         setMatchesLoading(false);
         setMatchesError(null);
       },
       (error) => {
         snapshotReceived = true;
+
         setMatchesError(
           error.code === "permission-denied"
             ? "Permission denied loading matches."
             : error.message || "Failed to load matches"
         );
+
         setMatchesLoading(false);
       }
     );
@@ -128,20 +169,33 @@ export default function ChatPage() {
     };
   }, [currentUid]);
 
+  /* LOAD PEER DATA */
+
   useEffect(() => {
     if (!currentUid) return;
 
     matches.forEach((match) => {
-      const peerUid = getPeerUidFromMatch(match.users, currentUid);
-      if (peerUid) loadPeerProfile(peerUid);
+      const peerUid = getPeerUidFromMatch(
+        match.users,
+        currentUid
+      );
+
+      if (peerUid) {
+        loadPeerProfile(peerUid);
+      }
     });
   }, [matches, currentUid, loadPeerProfile]);
+
+  /* SELECT MATCH */
 
   useEffect(() => {
     if (!currentUid || matchesLoading) return;
 
     if (matchFromUrl) {
-      setSelectedMatchId((prev) => (prev === matchFromUrl ? prev : matchFromUrl));
+      setSelectedMatchId((prev) =>
+        prev === matchFromUrl ? prev : matchFromUrl
+      );
+
       return;
     }
 
@@ -150,13 +204,19 @@ export default function ChatPage() {
     if (matches.length > 0) {
       setSelectedMatchId(matches[0].id);
     }
-  }, [matches, currentUid, matchFromUrl, selectedMatchId, matchesLoading]);
+  }, [
+    matches,
+    currentUid,
+    matchFromUrl,
+    selectedMatchId,
+    matchesLoading,
+  ]);
+
+  /* LOAD MESSAGES */
 
   useEffect(() => {
     if (!selectedMatchId || !currentUid) {
       setMessages([]);
-      setMessagesLoading(false);
-      setMessagesError(null);
       return;
     }
 
@@ -168,14 +228,20 @@ export default function ChatPage() {
     (async () => {
       try {
         await ensureChatForMatch(selectedMatchId);
-        const history = await fetchMatchMessages(selectedMatchId);
+
+        const history =
+          await fetchMatchMessages(selectedMatchId);
+
         if (!cancelled) {
           setMessages(history);
           setMessagesLoading(false);
         }
       } catch (error) {
         if (!cancelled) {
-          setMessagesError(error.message || "Failed to load messages");
+          setMessagesError(
+            error.message || "Failed to load messages"
+          );
+
           setMessagesLoading(false);
         }
       }
@@ -185,38 +251,57 @@ export default function ChatPage() {
 
     const offMessage = onNewMessage((raw) => {
       if (raw.matchId !== selectedMatchId) return;
+
       setMessages((prev) =>
         mergeMessages(prev, [normalizeSocketMessage(raw)])
       );
     });
 
     const offError = onChatError((err) => {
-      setSendError(err.message || "Chat connection error");
+      setSendError(err.message || "Chat error");
     });
 
     return () => {
       cancelled = true;
+
       leaveMatchRoom(selectedMatchId);
+
       offMessage();
       offError();
     };
   }, [selectedMatchId, currentUid]);
 
+  /* AUTO SCROLL */
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, selectedMatchId, messagesLoading]);
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
+
+  /* CONVERSATIONS */
 
   const conversationList = useMemo(() => {
     if (!currentUid) return [];
 
     return matches
       .map((match) => {
-        const peerUid = getPeerUidFromMatch(match.users, currentUid);
+        const peerUid = getPeerUidFromMatch(
+          match.users,
+          currentUid
+        );
+
         if (!peerUid) return null;
 
-        const peer = peerProfiles[peerUid] || getDefaultUserProfile(peerUid);
-        const chatMessages = match.id === selectedMatchId ? messages : [];
-        const lastMsg = chatMessages[chatMessages.length - 1];
+        const peer =
+          peerProfiles[peerUid] ||
+          getDefaultUserProfile(peerUid);
+
+        const chatMessages =
+          match.id === selectedMatchId ? messages : [];
+
+        const lastMsg =
+          chatMessages[chatMessages.length - 1];
 
         return {
           matchId: match.id,
@@ -225,47 +310,83 @@ export default function ChatPage() {
           avatar: peer.avatar,
           online: peer.online,
           unread: peer.unread,
-          lastMessage: lastMsg?.text || "No messages yet",
-          lastTime: lastMsg?.timestamp ? formatRelativeTime(lastMsg.timestamp) : "",
+          lastMessage:
+            lastMsg?.text || "No messages yet",
+          lastTime: lastMsg?.timestamp
+            ? formatRelativeTime(lastMsg.timestamp)
+            : "",
         };
       })
       .filter(Boolean);
-  }, [matches, currentUid, peerProfiles, selectedMatchId, messages]);
+  }, [
+    matches,
+    currentUid,
+    peerProfiles,
+    selectedMatchId,
+    messages,
+  ]);
 
-  const filteredConversations = conversationList.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredConversations =
+    conversationList.filter((c) =>
+      c.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    );
 
   const selectedPeerUid = useMemo(() => {
     if (!selectedMatchId || !currentUid) return null;
-    const match = matches.find((m) => m.id === selectedMatchId);
-    return match ? getPeerUidFromMatch(match.users, currentUid) : null;
+
+    const match = matches.find(
+      (m) => m.id === selectedMatchId
+    );
+
+    return match
+      ? getPeerUidFromMatch(match.users, currentUid)
+      : null;
   }, [selectedMatchId, matches, currentUid]);
 
   const selectedUser = selectedPeerUid
-    ? peerProfiles[selectedPeerUid] || getDefaultUserProfile(selectedPeerUid)
+    ? peerProfiles[selectedPeerUid] ||
+      getDefaultUserProfile(selectedPeerUid)
     : null;
 
   const uiMessages = useMemo(
     () =>
       messages.map((msg) => ({
         id: msg.id,
-        sender: msg.senderId === currentUid ? "me" : "them",
+        sender:
+          msg.senderId === currentUid
+            ? "me"
+            : "them",
         text: msg.text,
         time: formatMessageTime(msg.timestamp),
       })),
     [messages, currentUid]
   );
 
+  /* SEND */
+
   const handleSend = async () => {
     const text = messageInput.trim();
-    if (!text || !currentUid || !selectedMatchId || sending) return;
+
+    if (
+      !text ||
+      !currentUid ||
+      !selectedMatchId ||
+      sending
+    )
+      return;
 
     setSendError(null);
     setSending(true);
 
     try {
-      const saved = await sendMessage(selectedMatchId, currentUid, text);
+      const saved = await sendMessage(
+        selectedMatchId,
+        currentUid,
+        text
+      );
+
       emitChatMessage({
         id: saved.id,
         matchId: selectedMatchId,
@@ -273,11 +394,16 @@ export default function ChatPage() {
         text: saved.text,
         timestamp: saved.timestamp,
       });
-      setMessages((prev) => mergeMessages(prev, [saved]));
+
+      setMessages((prev) =>
+        mergeMessages(prev, [saved])
+      );
+
       setMessageInput("");
     } catch (error) {
-      console.error("Send message error:", error);
-      setSendError(error.message || "Failed to send message");
+      setSendError(
+        error.message || "Failed to send"
+      );
     } finally {
       setSending(false);
     }
@@ -292,233 +418,383 @@ export default function ChatPage() {
 
   const handleSelectMatch = (matchId) => {
     setSelectedMatchId(matchId);
-    setShowSidebar(false);
-    setSendError(null);
+
+    if (window.innerWidth < 1024) {
+      setShowSidebar(false);
+    }
   };
+
+  /* LOADING */
 
   if (authLoading) {
     return (
-      <div className="h-[calc(100vh-65px)] flex items-center justify-center bg-base-200/30">
-        <Loader2 className="animate-spin text-primary" size={36} />
+      <div className="h-screen flex items-center justify-center">
+        <Loader2
+          className="animate-spin text-[#e2593b]"
+          size={36}
+        />
       </div>
     );
   }
 
+  /* NO USER */
+
   if (!user) {
     return (
-      <div className="h-[calc(100vh-65px)] flex items-center justify-center bg-base-200/30 px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-base-100 p-8 rounded-3xl shadow-xl text-center max-w-md w-full"
-        >
-          <h1 className="text-2xl font-display font-bold mb-2">Sign in to chat</h1>
-          <p className="text-base-content/60 mb-6">
-            Log in to send and receive real-time messages with your matches.
-          </p>
+      <div className="h-screen flex items-center justify-center p-6">
+        <div className="text-center">
           <button
             onClick={() => navigate("/login")}
-            className="btn btn-vibrant-primary w-full flex items-center gap-2 justify-center"
+            className="btn"
           >
-            <LogIn size={18} />
-            Go to Login
+            <LogIn size={16} />
+            Login
           </button>
-        </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-65px)] flex bg-base-200/30">
-      <aside
-        className={`
-          ${showSidebar ? "flex" : "hidden"} lg:flex
-          flex-col w-full lg:w-80 xl:w-96
-          bg-base-100 border-r border-base-300 shrink-0
-        `}
-      >
-        <div className="p-5 border-b border-base-300">
-          <h2 className="text-2xl font-display font-bold mb-4">Messages</h2>
-          <label className="input input-bordered rounded-2xl flex items-center gap-2 bg-base-200/60">
-            <Search size={16} className="text-base-content/40" />
-            <input
-              type="text"
-              placeholder="Search matches..."
-              className="grow text-sm bg-transparent outline-none"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </label>
-          {matchesError && (
-            <p className="text-xs text-error mt-2">{matchesError}</p>
-          )}
-        </div>
+    <div
+      className={`
+        fixed inset-0
+        pt-[72px]
+        overflow-hidden
+        ${
+          isDark
+            ? "bg-[#0b0b0b] text-white"
+            : "bg-[#fcfcfc] text-black"
+        }
+      `}
+    >
+      <div className="flex h-full overflow-hidden">
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-1">
-          {matchesLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="animate-spin text-primary" size={28} />
-            </div>
-          ) : filteredConversations.length === 0 ? (
-            <div className="text-center text-sm text-base-content/40 py-8 px-4">
-              <p>No matches yet.</p>
-              <Link to="/swipe" className="link link-primary text-xs mt-2 inline-block">
-                Find people to match with
-              </Link>
-            </div>
-          ) : (
-            filteredConversations.map((conv) => (
-              <button
-                key={conv.matchId}
-                onClick={() => handleSelectMatch(conv.matchId)}
-                className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 text-left ${
-                  selectedMatchId === conv.matchId
-                    ? "bg-primary/10 border border-primary/20"
-                    : "hover:bg-base-200"
-                }`}
-              >
-                <div className="relative shrink-0">
-                  <UserAvatar user={conv} size="lg" />
-                </div>
+        {/* SIDEBAR */}
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-sm truncate">{conv.name}</span>
-                    {conv.lastTime && (
-                      <span className="text-[11px] text-base-content/40 shrink-0 ml-1">
+        <aside
+          className={`
+            ${
+              showSidebar
+                ? "flex"
+                : "hidden"
+            }
+
+            lg:flex
+            flex-col
+
+            absolute lg:relative
+            inset-y-0 left-0
+
+            z-40
+
+            w-full
+            sm:w-[320px]
+            lg:w-[340px]
+
+            shrink-0
+
+            border-r
+
+            ${
+              isDark
+                ? "border-white/[0.06] bg-[#0b0b0b]"
+                : "border-neutral-200 bg-white"
+            }
+          `}
+        >
+          {/* SIDEBAR HEADER */}
+
+          <div
+            className={`
+              p-4
+              border-b
+              ${
+                isDark
+                  ? "border-white/[0.06]"
+                  : "border-neutral-200"
+              }
+            `}
+          >
+            <h2 className="text-sm font-black uppercase tracking-widest text-[#e2593b] mb-4">
+              Messages
+            </h2>
+
+            <div
+              className={`
+                flex items-center gap-2
+                px-3 py-2 rounded-xl border
+                ${
+                  isDark
+                    ? "border-white/[0.06] bg-white/[0.03]"
+                    : "border-neutral-200 bg-neutral-50"
+                }
+              `}
+            >
+              <Search size={14} />
+
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) =>
+                  setSearchQuery(e.target.value)
+                }
+                className="bg-transparent outline-none flex-1 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* CONVERSATIONS */}
+
+          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+
+            {filteredConversations.map((conv) => {
+              const active =
+                selectedMatchId === conv.matchId;
+
+              return (
+                <button
+                  key={conv.matchId}
+                  onClick={() =>
+                    handleSelectMatch(conv.matchId)
+                  }
+                  className={`
+                    w-full
+                    flex items-center gap-3
+                    p-3 rounded-2xl
+                    transition-all
+
+                    ${
+                      active
+                        ? "bg-[#e2593b] text-white"
+                        : isDark
+                        ? "hover:bg-white/[0.04]"
+                        : "hover:bg-neutral-100"
+                    }
+                  `}
+                >
+                  <UserAvatar
+                    user={conv}
+                    size="lg"
+                    className="rounded-xl"
+                  />
+
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex justify-between">
+                      <h3 className="font-semibold truncate text-sm">
+                        {conv.name}
+                      </h3>
+
+                      <span className="text-[10px] opacity-60">
                         {conv.lastTime}
                       </span>
-                    )}
+                    </div>
+
+                    <p className="truncate text-xs opacity-70">
+                      {conv.lastMessage}
+                    </p>
                   </div>
-                  <p className="text-xs text-base-content/50 truncate mt-0.5">
-                    {conv.lastMessage}
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* MAIN */}
+
+        <main className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+          {selectedUser ? (
+            <>
+              {/* CHAT HEADER */}
+
+              <div
+                className={`
+                  sticky top-0 z-20
+                  flex items-center gap-3
+                  px-4 py-3
+                  border-b backdrop-blur-xl
+                  ${
+                    isDark
+                      ? "border-white/[0.06] bg-[#0b0b0b]/80"
+                      : "border-neutral-200 bg-white/80"
+                  }
+                `}
+              >
+                <button
+                  onClick={() =>
+                    setShowSidebar(true)
+                  }
+                  className="lg:hidden"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+
+                <UserAvatar
+                  user={selectedUser}
+                  size="md"
+                  className="rounded-xl"
+                />
+
+                <div>
+                  <h3 className="font-bold text-sm">
+                    {selectedUser.name}
+                  </h3>
+
+                  <p className="text-xs opacity-60 flex items-center gap-1">
+                    <Circle
+                      size={6}
+                      className="fill-green-500 text-green-500"
+                    />
+                    Online
                   </p>
                 </div>
-              </button>
-            ))
-          )}
-        </div>
-      </aside>
-
-      <main
-        className={`
-          ${!showSidebar ? "flex" : "hidden"} lg:flex
-          flex-col flex-1 bg-base-100 min-w-0
-        `}
-      >
-        {selectedUser && selectedMatchId ? (
-          <>
-            <div className="flex items-center gap-3 p-4 border-b border-base-300 bg-base-100/80 backdrop-blur-sm">
-              <button
-                className="btn btn-icon-vibrant btn-sm bg-slate-400 hover:bg-slate-500 text-white lg:hidden"
-                onClick={() => setShowSidebar(true)}
-              >
-                <ArrowLeft size={18} />
-              </button>
-
-              <div className="relative">
-                <UserAvatar user={selectedUser} size="md" className="ring-primary/20" />
               </div>
 
-              <div className="flex-1">
-                <h3 className="font-semibold text-sm">{selectedUser.name}</h3>
-                <p className="text-xs text-base-content/40 flex items-center gap-1">
-                  <Circle size={8} className="fill-success text-success" /> Live chat
-                </p>
-              </div>
-            </div>
+              {/* MESSAGES */}
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messagesLoading ? (
-                <div className="flex justify-center py-16">
-                  <Loader2 className="animate-spin text-primary" size={32} />
-                </div>
-              ) : messagesError ? (
-                <p className="text-center text-sm text-error py-8">{messagesError}</p>
-              ) : uiMessages.length === 0 ? (
-                <p className="text-center text-sm text-base-content/40 py-8">
-                  No messages yet. Say hello!
-                </p>
-              ) : (
-                uiMessages.map((msg, i) => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                    className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"} items-end gap-2`}
-                  >
-                    {msg.sender !== "me" && (
-                      <UserAvatar user={selectedUser} size="xs" className="mb-1" />
-                    )}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-                    <div
-                      className={`max-w-[70%] ${msg.sender === "me" ? "items-end" : "items-start"} flex flex-col gap-1`}
+                {uiMessages.map((msg, i) => {
+                  const isMe =
+                    msg.sender === "me";
+
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{
+                        opacity: 0,
+                        y: 10,
+                        scale: 0.98,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        scale: 1,
+                      }}
+                      transition={{
+                        delay: Math.min(
+                          i * 0.02,
+                          0.2
+                        ),
+                      }}
+                      className={`flex ${
+                        isMe
+                          ? "justify-end"
+                          : "justify-start"
+                      }`}
                     >
                       <div
-                        className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
-                          msg.sender === "me"
-                            ? "chat-bubble-sent"
-                            : "bg-base-200 text-base-content chat-bubble-received"
-                        }`}
-                      >
-                        {msg.text}
-                      </div>
-                      <span className="text-[10px] text-base-content/30 px-1">
-                        {msg.time}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+                        className={`
+                          max-w-[92%]
+                          sm:max-w-[75%]
+                          px-4 py-3
+                          rounded-2xl
+                          text-sm
+                          leading-relaxed
 
-            <div className="p-4 border-t border-base-300 bg-base-100">
-              {sendError && (
-                <p className="text-xs text-error text-center mb-2">{sendError}</p>
-              )}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder={`Message ${selectedUser.name}...`}
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={sending}
-                  className="input input-bordered flex-1 rounded-2xl bg-base-200/60 focus:bg-base-100 text-sm transition-colors"
-                />
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleSend}
-                  disabled={!messageInput.trim() || sending}
-                  className="btn btn-vibrant-primary btn-circle font-semibold disabled:opacity-40"
-                >
-                  {sending ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <Send size={18} />
-                  )}
-                </motion.button>
+                          ${
+                            isMe
+                              ? "bg-[#e2593b] text-white rounded-br-md"
+                              : isDark
+                              ? "bg-white/[0.05] border border-white/[0.06]"
+                              : "bg-neutral-100 border border-neutral-200"
+                          }
+                        `}
+                      >
+                        <p>{msg.text}</p>
+
+                        <span className="block mt-1 text-[10px] opacity-50">
+                          {msg.time}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+
+                <div ref={messagesEndRef} />
               </div>
-              <p className="text-xs text-base-content/30 text-center mt-2">
-                Press Enter to send
-              </p>
+
+              {/* INPUT */}
+
+              <div
+                className={`
+                  sticky bottom-0
+                  p-4 border-t
+                  ${
+                    isDark
+                      ? "border-white/[0.06] bg-[#0b0b0b]"
+                      : "border-neutral-200 bg-white"
+                  }
+                `}
+              >
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={messageInput}
+                    onChange={(e) =>
+                      setMessageInput(e.target.value)
+                    }
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type a message..."
+                    className={`
+                      flex-1
+                      px-4 py-3
+                      rounded-xl
+                      outline-none border
+                      text-sm
+
+                      ${
+                        isDark
+                          ? "bg-white/[0.03] border-white/[0.06]"
+                          : "bg-neutral-50 border-neutral-200"
+                      }
+                    `}
+                  />
+
+                  <motion.button
+                    whileHover={{
+                      scale: 1.03,
+                    }}
+                    whileTap={{
+                      scale: 0.97,
+                    }}
+                    onClick={handleSend}
+                    className="w-12 h-12 rounded-xl bg-[#e2593b] text-white flex items-center justify-center"
+                  >
+                    {sending ? (
+                      <Loader2
+                        className="animate-spin"
+                        size={18}
+                      />
+                    ) : (
+                      <Send size={18} />
+                    )}
+                  </motion.button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <MessageSquare
+                  size={40}
+                  className="mx-auto mb-4 opacity-40"
+                />
+
+                <h3 className="font-bold text-lg">
+                  Select a chat
+                </h3>
+
+                <p className="text-sm opacity-60 mt-1">
+                  Start messaging your matches
+                </p>
+              </div>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-base-content/30">
-            <div className="text-6xl mb-4">💬</div>
-            <p className="font-medium">Select a conversation</p>
-            {!matchesLoading && conversationList.length === 0 && (
-              <Link to="/swipe" className="btn btn-vibrant-primary btn-sm mt-4">
-                Go to Discover
-              </Link>
-            )}
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
