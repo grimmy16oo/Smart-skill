@@ -95,3 +95,17 @@ export async function getFeaturedUsers(count = 3) {
     rating: user.rating || 4.8,
   }));
 }
+
+export async function getUserReviews(uid) {
+  if (!uid) return [];
+  const data = await apiRequest(`/users/${uid}/reviews`);
+  return data.reviews || [];
+}
+
+export async function createUserReview(uid, reviewData) {
+  const data = await apiRequest(`/users/${uid}/reviews`, {
+    method: "POST",
+    body: JSON.stringify(reviewData),
+  });
+  return data.review;
+}

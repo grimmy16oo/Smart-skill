@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll } from "framer-motion";
-import { ArrowUpRight, Sparkles, Brain, Rocket, Users, Zap, Loader2 } from "lucide-react";
+import { ArrowUpRight, Sparkles, Brain, Rocket, Users, Loader2 } from "lucide-react";
 
 import { useTheme } from "../context/ThemeContext";
 import { getFeaturedUsers } from "../services/userService";
@@ -174,15 +174,19 @@ export default function HomePage() {
                   }`}
               >
                 <div className={`h-28 flex justify-center items-end relative ${isDark ? 'bg-gradient-to-b from-[#e2593b]/10 to-transparent' : 'bg-gradient-to-b from-[#e2593b]/5 to-transparent'}`}>
-                  <UserAvatar
-                    user={member}
-                    size="xl"
-                    className={`translate-y-11 border-4 ${isDark ? 'border-[#0b0b0b]' : 'border-[#fcfcfc]'}`}
-                  />
+                  <Link to={`/profile/${member.uid}`} className="translate-y-11 hover:opacity-90 transition-opacity">
+                    <UserAvatar
+                      user={member}
+                      size="xl"
+                      className={`border-4 ${isDark ? 'border-[#0b0b0b]' : 'border-[#fcfcfc]'}`}
+                    />
+                  </Link>
                 </div>
 
                 <div className="pt-16 p-6 text-center flex flex-col items-center flex-grow">
-                  <h3 className="text-lg font-bold mb-1">{member.name}</h3>
+                  <Link to={`/profile/${member.uid}`} className="hover:text-[#e2593b] transition-colors">
+                    <h3 className="text-lg font-bold mb-1">{member.name}</h3>
+                  </Link>
 
                   <div className="mb-4">
                     <StarRating rating={member.rating || 4.8} />
@@ -194,14 +198,14 @@ export default function HomePage() {
                   </div>
 
                   <Link
-                    to="/swipe"
+                    to={`/profile/${member.uid}`}
                     className={`w-full py-3 rounded-2xl text-sm font-semibold transition-all flex items-center justify-center gap-2 mt-auto ${isDark
                         ? 'bg-white text-black hover:bg-neutral-200'
                         : 'bg-neutral-900 text-white hover:bg-neutral-800'
                       }`}
                   >
-                    Discover match
-                    <Zap size={13} fill="currentColor" />
+                    View Profile
+                    <ArrowUpRight size={13} strokeWidth={2.5} />
                   </Link>
                 </div>
               </motion.div>

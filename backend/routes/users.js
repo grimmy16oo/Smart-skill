@@ -4,6 +4,7 @@ import Like from "../models/Like.js";
 import Match from "../models/Match.js";
 import SwipeAction from "../models/SwipeAction.js";
 import User from "../models/User.js";
+import Review from "../models/Review.js";
 import { protect } from "../middleware/auth.js";
 import { buildBehaviorProfile, computeMatchPercent } from "../utils/matching.js";
 import { serializeUser } from "../utils/serializers.js";
@@ -108,6 +109,72 @@ router.get("/:id", protect, async (req, res) => {
     }
 
     res.status(200).json({ success: true, user: serializeUser(user) });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/:id/reviews", protect, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    if (!isObjectId(targetId)) {
+      return res.status(400).json({ message: "Invalid user id" });
+    }
+
+    const reviews = await Review.find({ toUser: targetId })
+      .populate("fromUser", "name avatar")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, reviews });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/:id/reviews", protect, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const reviewerId = req.userId;
+    const { rating, text } = req.body;
+
+    if (!isObjectId(targetId)) {
+      return res.status(400).json({ message: "Invalid user id" });
+    }
+
+    if (targetId === reviewerId.toString()) {
+      return res.status(400).json({ message: "You cannot review yourself" });
+    }
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+    }
+
+    // Verify they have matched before allowing a review
+    const match = await Match.findOne({
+      users: { $all: [reviewerId, targetId] },
+    });
+
+    if (!match) {
+      return res.status(403).json({ message: "You can only review users you have matched with" });
+    }
+
+    const review = await Review.findOneAndUpdate(
+      { fromUser: reviewerId, toUser: targetId },
+      { fromUser: reviewerId, toUser: targetId, rating, text },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).populate("fromUser", "name avatar");
+
+    // Recalculate average rating and reviewCount for targetUser
+    const reviews = await Review.find({ toUser: targetId });
+    const reviewCount = reviews.length;
+    const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount;
+
+    await User.findByIdAndUpdate(targetId, {
+      rating: parseFloat(avgRating.toFixed(1)),
+      reviewCount: reviewCount,
+    });
+
+    res.status(201).json({ success: true, review });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

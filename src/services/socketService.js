@@ -38,7 +38,17 @@ export function disconnectSocket() {
 
 export function joinMatchRoom(matchId, uid) {
   const s = connectSocket();
-  s.emit("join_match", { matchId, uid });
+
+  const doJoin = () => {
+    s.emit("join_match", { matchId, uid });
+  };
+
+  if (s.connected) {
+    doJoin();
+  } else {
+    s.once("connect", doJoin);
+  }
+
   return s;
 }
 

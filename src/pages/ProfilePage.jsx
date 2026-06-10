@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -18,11 +18,18 @@ import {
   Sparkles,
   BookOpen,
   Award,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { subscribeToMatches } from "../services/matchService";
-import { updateUserProfile, uploadAvatar } from "../services/userService";
+import {
+  updateUserProfile,
+  uploadAvatar,
+  getUserProfile,
+  getUserReviews,
+  createUserReview,
+} from "../services/userService";
 import SkillBadge from "../components/SkillBadge";
 import UserAvatar from "../components/UserAvatar";
 import { hasRealAvatar } from "../utils/avatar";
@@ -91,6 +98,7 @@ export default function ProfilePage() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const { id } = useParams();
   const fileInputRef = useRef(null);
   const [tab, setTab] = useState("skills");
   const [edit, setEdit] = useState(false);
@@ -108,20 +116,137 @@ export default function ProfilePage() {
     avatar: "",
   });
 
-  const displayProfile = useMemo(
-    () => ({ ...profileFallback(user), ...(profile || {}) }),
-    [profile, user]
-  );
+  const [targetProfile, setTargetProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState(null);
+
+  // Reviews State
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  // Review Form State
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+
+  const isOwnProfile = !id || id === user?.uid;
+
+  const displayProfile = useMemo(() => {
+    if (isOwnProfile) {
+      return { ...profileFallback(user), ...(profile || {}) };
+    }
+    return targetProfile || profileFallback(null);
+  }, [isOwnProfile, user, profile, targetProfile]);
+
+  useEffect(() => {
+    if (isOwnProfile) {
+      setTargetProfile(null);
+      setProfileError(null);
+      return;
+    }
+
+    async function fetchTargetProfile() {
+      setProfileLoading(true);
+      setProfileError(null);
+      try {
+        const data = await getUserProfile(id);
+        if (!data) {
+          setProfileError("User profile not found");
+        } else {
+          setTargetProfile(data);
+        }
+      } catch (err) {
+        setProfileError(err.message || "Failed to load profile");
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+
+    fetchTargetProfile();
+  }, [id, isOwnProfile]);
+
+  useEffect(() => {
+    if (!displayProfile?.uid) return;
+
+    async function loadReviews() {
+      setReviewsLoading(true);
+      try {
+        const list = await getUserReviews(displayProfile.uid);
+        setReviews(list);
+      } catch (err) {
+        console.error("Failed to load reviews:", err);
+      } finally {
+        setReviewsLoading(false);
+      }
+    }
+
+    loadReviews();
+  }, [displayProfile?.uid]);
+
+  const [matches, setMatches] = useState([]);
 
   useEffect(() => {
     if (!user?.uid) return;
 
-    const unsubscribe = subscribeToMatches(user.uid, (matches) => {
-      setMatchCount(matches.length);
+    const unsubscribe = subscribeToMatches(user.uid, (nextMatches) => {
+      setMatches(nextMatches);
+      setMatchCount(nextMatches.length);
     });
 
     return () => unsubscribe();
   }, [user?.uid]);
+
+  const activeMatch = useMemo(() => {
+    if (!id || !user?.uid) return null;
+    return matches.find((m) => m.users.includes(id));
+  }, [matches, id, user?.uid]);
+
+  const isMatched = !!activeMatch;
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!displayProfile.uid || submittingReview) return;
+
+    setSubmittingReview(true);
+    setReviewError("");
+
+    try {
+      const savedReview = await createUserReview(displayProfile.uid, {
+        rating: reviewRating,
+        text: reviewText,
+      });
+
+      const reviewer = {
+        _id: user.uid,
+        name: profile?.name || user.name || "You",
+        avatar: profile?.avatar || user.avatar || "",
+      };
+
+      const populatedReview = {
+        ...savedReview,
+        fromUser: reviewer,
+      };
+
+      setReviews((prev) => {
+        const filtered = prev.filter((r) => r.fromUser?._id !== user.uid && r.fromUser?.uid !== user.uid);
+        return [populatedReview, ...filtered];
+      });
+
+      setReviewText("");
+      setShowReviewForm(false);
+
+      if (!isOwnProfile) {
+        const updatedProfile = await getUserProfile(id);
+        if (updatedProfile) setTargetProfile(updatedProfile);
+      }
+    } catch (err) {
+      setReviewError(err.message || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   useEffect(() => {
     setForm({
@@ -190,10 +315,34 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className={`flex-1 h-screen flex items-center justify-center transition-colors duration-300 ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
         <Loader2 className="animate-spin text-[#e2593b]" size={36} />
+      </div>
+    );
+  }
+
+  if (profileError) {
+    return (
+      <div className={`flex-1 h-screen flex items-center justify-center px-6 transition-colors duration-300 ${isDark ? "bg-[#0b0b0b] text-white" : "bg-[#fcfcfc] text-neutral-900"}`}>
+        <div className={`text-center max-w-sm p-8 rounded-[32px] border ${isDark ? "border-white/[0.06] bg-white/[0.01]" : "border-neutral-900/[0.06] bg-neutral-900/[0.01] shadow-xl"}`}>
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center mx-auto mb-5 text-rose-500">
+            <X size={22} />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight mb-2">Profile Error</h1>
+          <p className={`text-xs font-medium leading-relaxed mb-6 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+            {profileError}
+          </p>
+          <button
+            onClick={() => navigate(-1)}
+            className={`w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-[0.98] ${
+              isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+            }`}
+          >
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
@@ -245,17 +394,19 @@ export default function ProfilePage() {
                     size="2xl"
                     className={`ring-4 ${isDark ? "ring-[#0b0b0b]" : "ring-[#fcfcfc]"} rounded-[24px]`}
                   />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className={`absolute bottom-[-4px] right-[-4px] w-8 h-8 rounded-xl flex items-center justify-center border shadow-lg transition-transform active:scale-90 ${
-                      isDark ? "bg-white border-neutral-200 text-black hover:bg-neutral-100" : "bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
-                    }`}
-                    title="Upload profile photo"
-                  >
-                    {uploading ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
-                  </button>
+                  {isOwnProfile && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className={`absolute bottom-[-4px] right-[-4px] w-8 h-8 rounded-xl flex items-center justify-center border shadow-lg transition-transform active:scale-90 ${
+                        isDark ? "bg-white border-neutral-200 text-black hover:bg-neutral-100" : "bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
+                      }`}
+                      title="Upload profile photo"
+                    >
+                      {uploading ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
+                    </button>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -291,48 +442,79 @@ export default function ProfilePage() {
 
               {/* ACTION TOGGLES */}
               <div className="flex flex-wrap gap-2">
-                {edit ? (
-                  <>
+                {isOwnProfile ? (
+                  edit ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEdit(false);
+                          setError("");
+                        }}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                          isDark ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
+                        }`}
+                      >
+                        <X size={13} />
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={saving}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                          isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+                        }`}
+                      >
+                        {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                        Save
+                      </button>
+                    </>
+                  ) : (
                     <button
                       type="button"
                       onClick={() => {
-                        setEdit(false);
+                        setEdit(true);
+                        setSaved(false);
                         setError("");
                       }}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border flex items-center gap-1.5 transition-all active:scale-[0.97] ${
-                        isDark ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
-                      }`}
-                    >
-                      <X size={13} />
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSave}
-                      disabled={saving}
                       className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
                         isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
                       }`}
                     >
-                      {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                      Save
+                      <Edit3 size={13} />
+                      Edit profile
                     </button>
-                  </>
+                  )
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEdit(true);
-                      setSaved(false);
-                      setError("");
-                    }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
-                      isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
-                    }`}
-                  >
-                    <Edit3 size={13} />
-                    Edit profile
-                  </button>
+                  <>
+                    {isMatched && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/chat?matchId=${activeMatch.id}`)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                            isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+                          }`}
+                        >
+                          <MessageSquare size={13} />
+                          Message
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowReviewForm(!showReviewForm)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                            isDark 
+                              ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" 
+                              : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
+                          }`}
+                        >
+                          <Star size={13} />
+                          {showReviewForm ? "Close Review" : "Write Review"}
+                        </button>
+                      </>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -441,43 +623,166 @@ export default function ProfilePage() {
               </div>
 
               {/* FLOATING ACTION MINI PANEL */}
-              <div className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
-                isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-900/[0.02] border-neutral-900/[0.06]"
-              }`}>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-[#e2593b]/10 text-[#e2593b] shrink-0">
-                    <Upload size={14} />
+              {isOwnProfile ? (
+                <div className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
+                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-900/[0.02] border-neutral-900/[0.06]"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-xl bg-[#e2593b]/10 text-[#e2593b] shrink-0">
+                      <Upload size={14} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold tracking-tight uppercase tracking-wider">Profile photo</p>
+                      <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                        JPG, PNG, or WebP architecture footprints matching under 3 MB bounds.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold tracking-tight uppercase tracking-wider">Profile photo</p>
-                    <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
-                      JPG, PNG, or WebP architecture footprints matching under 3 MB bounds.
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className={`mt-4 w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                      isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-950"
+                    }`}
+                  >
+                    {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                    Upload image
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className={`mt-4 w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                    isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-950"
-                  }`}
-                >
-                  {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                  Upload image
-                </button>
-              </div>
+              ) : (
+                <div className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
+                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-900/[0.02] border-neutral-900/[0.06]"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-xl shrink-0 ${isMatched ? "bg-emerald-500/10 text-emerald-500" : "bg-blue-500/10 text-blue-500"}`}>
+                      <Users size={14} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold tracking-tight uppercase tracking-wider">Connection</p>
+                      <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                        {isMatched 
+                          ? `You are connected with ${displayProfile.name}. You can chat and exchange skills!`
+                          : `Discover and like ${displayProfile.name} on the discover page to match.`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  {isMatched ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/chat?matchId=${activeMatch.id}`)}
+                      className={`mt-4 w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                        isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-950"
+                      }`}
+                    >
+                      <MessageSquare size={12} />
+                      Chat Now
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigate("/swipe")}
+                      className={`mt-4 w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                        isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-950"
+                      }`}
+                    >
+                      Go to Discover
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </section>
 
         {/* CLUSTER INTELLIGENCE STATS MATRIX */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatCard icon={Users} value={String(matchCount)} label="Skill matches" tone="text-blue-500" isDark={isDark} />
+          <StatCard icon={Users} value={String(isOwnProfile ? matchCount : (displayProfile.matchCount || 0))} label="Skill matches" tone="text-blue-500" isDark={isDark} />
           <StatCard icon={Upload} value={hasRealAvatar(displayProfile.avatar) ? "Added" : "Missing"} label="Photo" tone="text-cyan-500" isDark={isDark} />
-          <StatCard icon={Star} value="5.0" label="Rating" tone="text-amber-500" isDark={isDark} />
-          <StatCard icon={TrendingUp} value="0" label="Reviews" tone="text-emerald-500" isDark={isDark} />
+          <StatCard icon={Star} value={displayProfile.rating > 0 ? displayProfile.rating.toFixed(1) : "0.0"} label="Rating" tone="text-amber-500" isDark={isDark} />
+          <StatCard icon={TrendingUp} value={String(displayProfile.reviewCount || 0)} label="Reviews" tone="text-emerald-500" isDark={isDark} />
         </div>
+
+        {/* REVIEW SUBMIT FORM */}
+        <AnimatePresence>
+          {showReviewForm && (
+            <motion.section
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <form
+                onSubmit={handleReviewSubmit}
+                className={`p-6 rounded-[24px] border space-y-4 ${
+                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-900/[0.02] border-neutral-900/[0.06]"
+                }`}
+              >
+                <h3 className="text-sm font-black uppercase tracking-widest text-[#e2593b]">Write a Review</h3>
+                
+                <div className="flex flex-col gap-2">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>Rating</span>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="transition-transform active:scale-90 text-amber-500"
+                      >
+                        <Star
+                          size={20}
+                          className={star <= reviewRating ? "fill-amber-500" : "text-neutral-400"}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>Review Details</span>
+                  <textarea
+                    required
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    placeholder="Describe your learning session or collaboration experience..."
+                    className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all min-h-[90px] resize-none ${
+                      isDark 
+                        ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
+                        : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
+                    }`}
+                  />
+                </div>
+
+                {reviewError && (
+                  <p className="text-xs text-rose-500 font-medium">{reviewError}</p>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewForm(false)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all active:scale-[0.97] ${
+                      isDark ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                      isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+                    }`}
+                  >
+                    {submittingReview ? <Loader2 size={13} className="animate-spin" /> : "Submit Review"}
+                  </button>
+                </div>
+              </form>
+            </motion.section>
+          )}
+        </AnimatePresence>
 
         {/* TABS DIRECTORY STRUCTURE BLOCK */}
         <section className={`rounded-[24px] border p-5 transition-all duration-300 ${
@@ -550,17 +855,61 @@ export default function ProfilePage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                className={`py-12 text-center rounded-2xl border border-dashed flex flex-col items-center justify-center ${
-                  isDark ? "border-white/[0.06] text-white/30" : "border-neutral-900/[0.06] text-neutral-400"
-                }`}
+                className="space-y-4"
               >
-                <div className="w-9 h-9 rounded-xl bg-neutral-500/10 flex items-center justify-center mb-3 opacity-60">
-                  <TrendingUp size={14} />
-                </div>
-                <p className="text-xs font-medium">No reviews yet.</p>
-                <p className={`text-[10px] font-medium mt-1 ${isDark ? "text-neutral-600" : "text-neutral-400"}`}>
-                  Reviews can be added after completed skill exchanges.
-                </p>
+                {reviewsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="animate-spin text-[#e2593b]" size={20} />
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <div className={`py-12 text-center rounded-2xl border border-dashed flex flex-col items-center justify-center ${
+                    isDark ? "border-white/[0.06] text-white/30" : "border-neutral-900/[0.06] text-neutral-400"
+                  }`}>
+                    <div className="w-9 h-9 rounded-xl bg-neutral-500/10 flex items-center justify-center mb-3 opacity-60">
+                      <TrendingUp size={14} />
+                    </div>
+                    <p className="text-xs font-medium">No reviews yet.</p>
+                    <p className={`text-[10px] font-medium mt-1 ${isDark ? "text-neutral-600" : "text-neutral-400"}`}>
+                      {isOwnProfile 
+                        ? "Reviews can be added after completed skill exchanges."
+                        : `Be the first to review your skill exchange with ${displayProfile.name}!`
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  reviews.map((rev) => (
+                    <div
+                      key={rev._id || rev.id}
+                      className={`p-4 rounded-2xl border transition-all ${
+                        isDark ? "bg-white/[0.01] border-white/[0.06]" : "bg-neutral-900/[0.01] border-neutral-900/[0.06]"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <UserAvatar user={rev.fromUser} size="md" className="rounded-lg shrink-0" />
+                          <div>
+                            <p className="text-xs font-bold">{rev.fromUser?.name || "Member"}</p>
+                            <p className={`text-[9px] font-medium ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                              {new Date(rev.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={12}
+                              className={i < rev.rating ? "fill-amber-500" : "text-neutral-400"}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className={`mt-3 text-xs leading-relaxed ${isDark ? "text-neutral-300" : "text-neutral-600"}`}>
+                        {rev.text}
+                      </p>
+                    </div>
+                  ))
+                )}
               </motion.div>
             )}
           </AnimatePresence>

@@ -1,5 +1,6 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { MapPin, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 import SkillBadge from "./SkillBadge";
 import UserAvatar from "./UserAvatar";
 import { hasRealAvatar } from "../utils/avatar";
@@ -58,8 +59,14 @@ export default function SwipeCard({ user, onSwipe, isTop, index }) {
           )}
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/65 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 text-white">
-            <div className="min-w-0">
-              <h2 className="truncate text-3xl font-bold leading-tight">{user.name}</h2>
+            <div className="min-w-0 flex-1">
+              <Link
+                to={`/profile/${user.uid}`}
+                onClick={(e) => e.stopPropagation()}
+                className="hover:underline inline-block max-w-full"
+              >
+                <h2 className="truncate text-3xl font-bold leading-tight">{user.name}</h2>
+              </Link>
               <p className="mt-1 flex items-center gap-1 text-sm text-white/80">
                 <MapPin size={14} />
                 {user.location || "SkillSwap member"}

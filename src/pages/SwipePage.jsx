@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, Zap, X, Heart, LogIn, Loader2, MessageCircle, Sparkles, MapPin } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -353,32 +353,41 @@ export default function SwipePage() {
               ) : (
                 <div className="space-y-3 max-h-[420px] overflow-auto pr-1">
                   {matches.map((match) => {
-                    const peer = matchProfiles[match.id];
-                    if (!peer) return null;
+                    const peer = matchProfiles[match.id] || {
+                      uid: getPeerUidFromMatch(match.users, user.uid),
+                      name: "Loading...",
+                      location: "SkillSwap member",
+                    };
 
                     return (
                       <div
                         key={match.id}
-                        className={`flex items-center gap-4 p-3 rounded-2xl border transition-all ${
+                        className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
                           isDark 
                             ? "border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.08]" 
                             : "border-neutral-900/[0.04] bg-[#fdfdfd] hover:bg-neutral-50 hover:border-neutral-900/[0.08]"
                         }`}
                       >
-                        <UserAvatar user={peer} size="lg" className="rounded-xl border border-neutral-500/10 flex-shrink-0" />
-                        
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-sm tracking-tight truncate">{peer.name}</p>
-                          <p className={`text-xs font-medium flex items-center gap-1.5 mt-0.5 truncate ${
-                            isDark ? "text-neutral-400" : "text-neutral-500"
-                          }`}>
-                            <MapPin size={10} className="text-[#e2593b]" />
-                            {peer.location || "SkillSwap member"}
-                          </p>
-                        </div>
-
                         <Link
-                          to={`/chat?matchId=${match.id}`}
+                          to={`/profile/${peer.uid}`}
+                          className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity"
+                        >
+                          <UserAvatar user={peer} size="lg" className="rounded-xl border border-neutral-500/10 flex-shrink-0" />
+                          
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-sm tracking-tight truncate">{peer.name}</p>
+                            <p className={`text-xs font-medium flex items-center gap-1.5 mt-0.5 truncate ${
+                              isDark ? "text-neutral-400" : "text-neutral-500"
+                            }`}>
+                              <MapPin size={10} className="text-[#e2593b]" />
+                              {peer.location || "SkillSwap member"}
+                            </p>
+                          </div>
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/chat?matchId=${match.id}`)}
                           className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                             isDark 
                               ? "bg-white/[0.04] text-white hover:bg-white hover:text-black" 
@@ -387,7 +396,7 @@ export default function SwipePage() {
                           title="Open chat"
                         >
                           <MessageCircle size={15} />
-                        </Link>
+                        </button>
                       </div>
                     );
                   })}
