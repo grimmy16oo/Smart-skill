@@ -16,6 +16,21 @@ async function findAuthorizedMatch(matchId, userId) {
   return Match.findOne({ _id: matchId, users: userId });
 }
 
+async function updateMatchPreview(matchId, message) {
+  await Match.findByIdAndUpdate(matchId, {
+    lastMessageText: message.text,
+    lastMessageSender: message.sender,
+    lastMessageAt: message.createdAt,
+  });
+}
+
+function broadcastMessage(req, message) {
+  const io = req.app.get("io");
+  if (!io) return;
+
+  io.to(`match:${message.matchId}`).emit("new_message", message);
+}
+
 router.post("/:matchId/ensure", protect, async (req, res) => {
   try {
     const match = await findAuthorizedMatch(req.params.matchId, req.userId);
@@ -68,8 +83,12 @@ router.post("/:matchId", protect, async (req, res) => {
       sender: req.userId,
       text,
     });
+    await updateMatchPreview(match._id, message);
 
-    res.status(201).json({ success: true, message: serializeMessage(message) });
+    const serializedMessage = serializeMessage(message);
+    broadcastMessage(req, serializedMessage);
+
+    res.status(201).json({ success: true, message: serializedMessage });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

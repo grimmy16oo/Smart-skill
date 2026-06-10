@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { getToken } from "./api";
 
 // undefined = same origin (uses Vite proxy to :5000 in dev)
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || undefined;
@@ -9,6 +10,9 @@ export function getSocket() {
   if (!socket) {
     socket = io(SOCKET_URL, {
       autoConnect: false,
+      auth: {
+        token: getToken(),
+      },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 8,
@@ -19,6 +23,7 @@ export function getSocket() {
 
 export function connectSocket() {
   const s = getSocket();
+  s.auth = { token: getToken() };
   if (!s.connected) {
     s.connect();
   }

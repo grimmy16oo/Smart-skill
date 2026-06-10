@@ -23,6 +23,20 @@ const matchSchema = new mongoose.Schema(
       enum: ["matched"],
       default: "matched",
     },
+    lastMessageText: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    lastMessageSender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    lastMessageAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

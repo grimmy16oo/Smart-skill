@@ -287,7 +287,7 @@ export default function LoginPage() {
         {/* Top Tagline Badge */}
         <div className="z-10 self-start">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-xs font-medium tracking-wider text-white uppercase">
-            ✦ Learn • Teach • Connect
+            Learn / Teach / Connect
           </span>
         </div>
 
@@ -305,24 +305,24 @@ export default function LoginPage() {
         <div className="z-10 flex items-center gap-6 text-xs text-white/60 tracking-wider uppercase font-semibold">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> 
-            Platform Step 1
+            Skill exchange
           </span>
-          <span>•</span>
-          <span>Secure Credentials</span>
+          <span>/</span>
+          <span>Secure account</span>
         </div>
       </div>
 
       {/* RIGHT COLUMN - MODERN FORM COMPONENT WITH INCREASED PADDING */}
-      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-8 py-16 sm:px-16 lg:px-24 xl:px-32 relative">
+      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-8 py-16 sm:px-16 lg:px-24 xl:px-32 relative overflow-y-auto">
         <div className="max-w-md w-full space-y-10">
           
           {/* Header Typography */}
           <div className="space-y-3">
             <h1 className="text-3xl font-bold tracking-tight text-base-content dark:text-white">
-              {isLogin ? "Sign In to Account" : "Sign Up Account"}
+              {isLogin ? "Sign in" : "Create your account"}
             </h1>
             <p className="text-sm text-base-content/60 dark:text-base-content/40">
-              {isLogin ? "Welcome back! Enter your data to continue." : "Enter your personal data to create your account."}
+              {isLogin ? "Welcome back. Continue to your skill matches." : "Join to list your skills and start matching."}
             </p>
           </div>
 
@@ -458,7 +458,7 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <Loader size={16} className="animate-spin text-neutral-content" />
-                  <span>Processing request...</span>
+                  <span>Working...</span>
                 </>
               ) : isLogin ? (
                 "Sign In"

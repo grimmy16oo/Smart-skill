@@ -154,7 +154,7 @@ export default function SwipePage() {
           </div>
           <h1 className="text-2xl font-black tracking-tight mb-2">Sign in to discover</h1>
           <p className={`text-xs font-medium leading-relaxed mb-6 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
-            Create an account to swipe, verify stack competencies, and match with other technical builders.
+            Create an account to meet people who want to trade knowledge, not money.
           </p>
           <button
             onClick={() => navigate("/login")}
@@ -171,34 +171,30 @@ export default function SwipePage() {
   }
 
   return (
-    <div className={`min-h-screen relative overflow-hidden pb-16 px-6 lg:px-16 transition-colors duration-300 pt-10 ${
+    <div className={`min-h-screen relative overflow-y-auto overflow-x-hidden pb-16 px-6 lg:px-16 transition-colors duration-300 pt-10 ${
       isDark ? "bg-[#0b0b0b] text-white" : "bg-[#fcfcfc] text-neutral-900"
     }`}>
-      {/* BACKGROUND GRAPHIC ORBS */}
-      <div className="absolute top-[-10%] left-1/4 w-[600px] h-[600px] bg-[#e2593b]/[0.03] blur-[140px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-purple-500/[0.02] blur-[140px] rounded-full pointer-events-none" />
-
       <div className="max-w-6xl mx-auto relative z-10">
         
         {/* HEADER BRAND CONTROL MATRIX */}
         <div className="text-center mb-14">
           <span className="text-xs font-bold text-[#e2593b] uppercase tracking-widest block mb-2">
-            Discovery Engine
+            Discover people
           </span>
           <h1 className="text-4xl lg:text-5xl font-black tracking-tighter leading-none">
             Find Your <span className="text-[#e2593b]">Skill Match.</span>
           </h1>
           <p className={`text-sm font-medium mt-3 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
-            Swipe vectors, verify alignments, and collaborate.
+            Like people you can learn from, teach, or collaborate with.
           </p>
           <div className="inline-flex items-center gap-2 mt-4 px-3 py-1 rounded-full border text-[11px] font-mono font-medium tracking-tight bg-neutral-500/5 border-neutral-500/10">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className={isDark ? "text-neutral-400" : "text-neutral-500"}>
               {usersLoading
-                ? "Compiling Index Node..."
+                ? "Loading skill profiles..."
                 : deckMeta
-                  ? `${users.length} available · ${deckMeta.otherUsersCount} member${deckMeta.otherUsersCount === 1 ? "" : "s"} online`
-                  : `${users.length} nodes ready`}
+                  ? `${users.length} available | ${deckMeta.otherUsersCount} member${deckMeta.otherUsersCount === 1 ? "" : "s"} total`
+                  : `${users.length} profiles ready`}
             </span>
           </div>
         </div>
@@ -223,26 +219,26 @@ export default function SwipePage() {
                       isDark ? "border-white/[0.06] bg-white/[0.01]" : "border-neutral-900/[0.06] bg-neutral-900/[0.01]"
                     }`}
                   >
-                    <div className="text-4xl mb-4">
-                      {loadError ? "⚠️" : deckMeta?.otherUsersCount === 0 ? "⚡" : "✨"}
+                    <div className="text-4xl mb-4 font-black text-[#e2593b]">
+                      {loadError ? "!" : deckMeta?.otherUsersCount === 0 ? "0" : "*"}
                     </div>
                     <h2 className="text-lg font-bold tracking-tight mb-2">
                       {loadError
-                        ? "Pipeline Failure"
+                        ? "Could not load profiles"
                         : deckMeta?.otherUsersCount === 0
-                          ? "Isolated Node Container"
-                          : "End of Stream Index"}
+                          ? "No other members yet"
+                          : "You reached the end"}
                     </h2>
                     <p className={`text-xs font-medium leading-relaxed mb-6 max-w-[260px] ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
                       {loadError ? (
                         loadError
                       ) : deckMeta?.otherUsersCount === 0 ? (
                         <>
-                          No alternative indices discovered. Create a second account container in an incognito window to verify peer alignment.
+                          Create another account in a private window to test matching, or invite a friend to join.
                         </>
                       ) : (
                         <>
-                          You have parsed through the active deck queue parameters. Refreshed skips will reappear inside your registry.
+                          You have seen everyone currently available. Reload later to check for new skill partners.
                         </>
                       )}
                     </p>
@@ -253,7 +249,7 @@ export default function SwipePage() {
                       }`}
                     >
                       <RotateCcw size={12} />
-                      Reload Stack
+                      Reload profiles
                     </button>
                   </motion.div>
                 ) : (
@@ -296,7 +292,7 @@ export default function SwipePage() {
                     ? "border-white/[0.08] bg-white/[0.02] text-red-400 hover:bg-red-500/10 hover:border-red-500/30" 
                     : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-red-500 hover:bg-red-500/5 hover:border-red-500/20 shadow-sm"
                 }`}
-                title="Reject Node"
+                title="Pass"
               >
                 <X size={20} />
               </button>
@@ -322,7 +318,7 @@ export default function SwipePage() {
                     ? "border-white/[0.08] bg-white/[0.02] text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30" 
                     : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/20 shadow-sm"
                 }`}
-                title="Authorize Connection"
+                title="Like"
               >
                 <Heart size={20} className="fill-current" />
               </button>
@@ -340,7 +336,7 @@ export default function SwipePage() {
                 <div className="w-7 h-7 rounded-lg bg-[#e2593b]/10 flex items-center justify-center text-[#e2593b]">
                   <Zap size={14} className="fill-current" />
                 </div>
-                <h3 className="font-bold text-sm uppercase tracking-wider">Verified Connections</h3>
+                <h3 className="font-bold text-sm uppercase tracking-wider">Your matches</h3>
                 <span className={`ml-auto text-xs font-mono font-bold px-2 py-0.5 rounded-md ${
                   isDark ? "bg-white/5 text-neutral-300" : "bg-neutral-950/5 text-neutral-600"
                 }`}>
@@ -351,7 +347,7 @@ export default function SwipePage() {
               {matches.length === 0 ? (
                 <div className="text-center py-16">
                   <p className={`text-xs font-medium ${isDark ? "text-white/30" : "text-neutral-400"}`}>
-                    No concurrent pipelines established yet.
+                    No matches yet. Like someone who likes you back to start chatting.
                   </p>
                 </div>
               ) : (
@@ -377,7 +373,7 @@ export default function SwipePage() {
                             isDark ? "text-neutral-400" : "text-neutral-500"
                           }`}>
                             <MapPin size={10} className="text-[#e2593b]" />
-                            {peer.location || "Cluster Network Nodes"}
+                            {peer.location || "SkillSwap member"}
                           </p>
                         </div>
 
@@ -388,7 +384,7 @@ export default function SwipePage() {
                               ? "bg-white/[0.04] text-white hover:bg-white hover:text-black" 
                               : "bg-neutral-950/[0.04] text-neutral-900 hover:bg-neutral-950 hover:text-white"
                           }`}
-                          title="Initialize Stream Chat"
+                          title="Open chat"
                         >
                           <MessageCircle size={15} />
                         </Link>
@@ -423,12 +419,12 @@ export default function SwipePage() {
             <div className="flex items-center gap-2">
               <span>
                 {toast.type === "match"
-                  ? `⚡ Intersect Match: ${toast.name}!`
+                  ? `New match: ${toast.name}!`
                   : toast.type === "like"
-                    ? `👍 Staged ${toast.name}`
+                    ? `Liked ${toast.name}`
                     : toast.type === "error"
                       ? toast.name
-                      : `🗑️ Skipped ${toast.name}`}
+                      : `Skipped ${toast.name}`}
               </span>
             </div>
             {toast.extra && (

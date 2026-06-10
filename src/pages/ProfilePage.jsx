@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -24,7 +24,8 @@ import { useTheme } from "../context/ThemeContext";
 import { subscribeToMatches } from "../services/matchService";
 import { updateUserProfile, uploadAvatar } from "../services/userService";
 import SkillBadge from "../components/SkillBadge";
-import UserAvatar, { hasRealAvatar } from "../components/UserAvatar";
+import UserAvatar from "../components/UserAvatar";
+import { hasRealAvatar } from "../utils/avatar";
 
 function StatCard({ icon: Icon, value, label, tone = "text-[#e2593b]", isDark }) {
   return (
@@ -206,7 +207,7 @@ export default function ProfilePage() {
           </div>
           <h1 className="text-2xl font-black tracking-tight mb-2">Sign in to profile</h1>
           <p className={`text-xs font-medium leading-relaxed mb-6 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
-            Log in to adjust your collaborative credentials, sync nodes, and customize your skill index parameters.
+            Log in to update your profile, skills, and learning goals.
           </p>
           <button
             onClick={() => navigate("/login")}
@@ -232,7 +233,7 @@ export default function ProfilePage() {
         <section className={`overflow-hidden rounded-[32px] border transition-all duration-300 ${
           isDark ? "bg-white/[0.01] border-white/[0.06] shadow-xl shadow-black/40" : "bg-neutral-900/[0.01] border-neutral-900/[0.06] shadow-sm"
         }`}>
-          {/* Subtle tech aesthetic top pipeline header line instead of thick gradient banner */}
+          {/* Subtle accent line for profile identity. */}
           <div className="h-[4px] bg-gradient-to-r from-[#e2593b] via-indigo-500 to-cyan-500" />
           
           <div className="p-6 md:p-8">
@@ -251,7 +252,7 @@ export default function ProfilePage() {
                     className={`absolute bottom-[-4px] right-[-4px] w-8 h-8 rounded-xl flex items-center justify-center border shadow-lg transition-transform active:scale-90 ${
                       isDark ? "bg-white border-neutral-200 text-black hover:bg-neutral-100" : "bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
                     }`}
-                    title="Upload node signature photo"
+                    title="Upload profile photo"
                   >
                     {uploading ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
                   </button>
@@ -282,7 +283,7 @@ export default function ProfilePage() {
                     </p>
                     <p className={`flex items-center gap-1.5 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
                       <Calendar size={13} className={isDark ? "text-neutral-500" : "text-neutral-400"} />
-                      Indexed {formatJoinedDate(displayProfile.createdAt)}
+                      Joined {formatJoinedDate(displayProfile.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -314,7 +315,7 @@ export default function ProfilePage() {
                       }`}
                     >
                       {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                      Commit
+                      Save
                     </button>
                   </>
                 ) : (
@@ -330,7 +331,7 @@ export default function ProfilePage() {
                     }`}
                   >
                     <Edit3 size={13} />
-                    Configure Node
+                    Edit profile
                   </button>
                 )}
               </div>
@@ -415,7 +416,7 @@ export default function ProfilePage() {
                   <div className="space-y-2">
                     <h4 className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>Biography Summary</h4>
                     <p className={`text-xs font-medium leading-relaxed max-w-2xl ${isDark ? "text-neutral-300" : "text-neutral-600"}`}>
-                      {displayProfile.bio || "No summary initialized for this deployment profile node yet."}
+                      {displayProfile.bio || "No bio yet. Add a short note about what you teach and what you want to learn."}
                     </p>
                   </div>
                 )}
@@ -448,7 +449,7 @@ export default function ProfilePage() {
                     <Upload size={14} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold tracking-tight uppercase tracking-wider">Node Payload</p>
+                    <p className="text-xs font-bold tracking-tight uppercase tracking-wider">Profile photo</p>
                     <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
                       JPG, PNG, or WebP architecture footprints matching under 3 MB bounds.
                     </p>
@@ -463,7 +464,7 @@ export default function ProfilePage() {
                   }`}
                 >
                   {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                  Transmit Matrix Image
+                  Upload image
                 </button>
               </div>
             </div>
@@ -472,10 +473,10 @@ export default function ProfilePage() {
 
         {/* CLUSTER INTELLIGENCE STATS MATRIX */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatCard icon={Users} value={String(matchCount)} label="Pipelines Connected" tone="text-blue-500" isDark={isDark} />
-          <StatCard icon={Upload} value={hasRealAvatar(displayProfile.avatar) ? "Active" : "Null"} label="Avatar Status" tone="text-cyan-500" isDark={isDark} />
-          <StatCard icon={Star} value="5.0" label="Symmetry Weight" tone="text-amber-500" isDark={isDark} />
-          <StatCard icon={TrendingUp} value="0" label="Appraisal Logs" tone="text-emerald-500" isDark={isDark} />
+          <StatCard icon={Users} value={String(matchCount)} label="Skill matches" tone="text-blue-500" isDark={isDark} />
+          <StatCard icon={Upload} value={hasRealAvatar(displayProfile.avatar) ? "Added" : "Missing"} label="Photo" tone="text-cyan-500" isDark={isDark} />
+          <StatCard icon={Star} value="5.0" label="Rating" tone="text-amber-500" isDark={isDark} />
+          <StatCard icon={TrendingUp} value="0" label="Reviews" tone="text-emerald-500" isDark={isDark} />
         </div>
 
         {/* TABS DIRECTORY STRUCTURE BLOCK */}
@@ -497,7 +498,7 @@ export default function ProfilePage() {
                       : "text-neutral-500 hover:text-neutral-950 hover:bg-neutral-900/[0.03]"
                 }`}
               >
-                {item === "skills" ? "Index Protocols" : "Feedback Pipelines"}
+                {item === "skills" ? "Skills" : "Reviews"}
               </button>
             ))}
           </div>
@@ -513,11 +514,11 @@ export default function ProfilePage() {
               >
                 <div>
                   <p className={`mb-3 text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
-                    Outbound Teach Vectors
+                    Can teach
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {(displayProfile.skillsOffered || []).length === 0 ? (
-                      <p className={`text-xs font-medium font-mono ${isDark ? "text-white/20" : "text-neutral-400"}`}>No vectors declared.</p>
+                      <p className={`text-xs font-medium font-mono ${isDark ? "text-white/20" : "text-neutral-400"}`}>No teaching skills yet.</p>
                     ) : (
                       displayProfile.skillsOffered.map((skill) => (
                         <SkillBadge key={skill} skill={skill} variant="offered" />
@@ -528,11 +529,11 @@ export default function ProfilePage() {
 
                 <div>
                   <p className={`mb-3 text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
-                    Inbound Acquisition Targets
+                    Wants to learn
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {(displayProfile.skillsWanted || []).length === 0 ? (
-                      <p className={`text-xs font-medium font-mono ${isDark ? "text-white/20" : "text-neutral-400"}`}>No targets declared.</p>
+                      <p className={`text-xs font-medium font-mono ${isDark ? "text-white/20" : "text-neutral-400"}`}>No learning goals yet.</p>
                     ) : (
                       displayProfile.skillsWanted.map((skill) => (
                         <SkillBadge key={skill} skill={skill} variant="wanted" />
@@ -556,9 +557,9 @@ export default function ProfilePage() {
                 <div className="w-9 h-9 rounded-xl bg-neutral-500/10 flex items-center justify-center mb-3 opacity-60">
                   <TrendingUp size={14} />
                 </div>
-                <p className="text-xs font-medium">Zero transaction receipts indexed.</p>
+                <p className="text-xs font-medium">No reviews yet.</p>
                 <p className={`text-[10px] font-medium mt-1 ${isDark ? "text-neutral-600" : "text-neutral-400"}`}>
-                  Conclude localized skill-swaps via cluster pipelines to inherit active appraisal data records.
+                  Reviews can be added after completed skill exchanges.
                 </p>
               </motion.div>
             )}

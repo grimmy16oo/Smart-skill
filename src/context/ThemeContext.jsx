@@ -43,8 +43,9 @@ export function ThemeProvider({ children }) {
 
   // apply theme to DOM (DaisyUI uses this)
   useEffect(() => {
-    const themeName = isDark ? "dark" : "light";
+    const themeName = isDark ? "skilldark" : "skilllight";
     document.documentElement.setAttribute("data-theme", themeName);
+    document.documentElement.classList.toggle("dark", isDark);
     localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
   }, [isDark]);
 

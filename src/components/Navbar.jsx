@@ -1,8 +1,8 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { Sun, Moon, Menu, X, LogOut } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import UserAvatar from "./UserAvatar";
 
@@ -18,9 +18,33 @@ export default function Navbar() {
   const { user, profile, logout, isAuthenticated } = useAuth();
 
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogout = async () => {
+    setDropdownOpen(false);
+    setMenuOpen(false);
+    await logout();
+    navigate("/");
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [dropdownOpen]);
 
   return (
     <>
@@ -97,11 +121,50 @@ export default function Navbar() {
 
           {/* USER / LOGIN */}
           {isAuthenticated && user ? (
-            <motion.div whileTap={{ scale: 0.95 }}>
-              <button className="w-10 h-10 rounded-full overflow-hidden border border-white/10">
+            <div className="relative" ref={dropdownRef}>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-colors"
+              >
                 <UserAvatar user={profile || user} size="md" />
-              </button>
-            </motion.div>
+              </motion.button>
+
+              {/* DESKTOP DROPDOWN */}
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className={`absolute right-0 top-full mt-2 rounded-2xl border shadow-lg z-50 min-w-[200px] ${
+                      isDark
+                        ? "bg-neutral-900 border-neutral-800"
+                        : "bg-white border-neutral-200"
+                    }`}
+                  >
+                    <Link
+                      to="/profile"
+                      onClick={() => setDropdownOpen(false)}
+                      className={`block px-4 py-3 text-sm font-medium rounded-t-2xl hover:opacity-70 transition-opacity ${
+                        isDark ? "text-white hover:bg-neutral-800" : "text-neutral-900 hover:bg-neutral-50"
+                      }`}
+                    >
+                      My Profile
+                    </Link>
+
+                    <button
+                      onClick={handleLogout}
+                      className={`w-full text-left px-4 py-3 text-sm font-medium rounded-b-2xl flex items-center gap-2 text-red-500 hover:opacity-70 transition-opacity`}
+                    >
+                      <LogOut size={16} />
+                      Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
             <Link
               to="/login"
@@ -200,7 +263,7 @@ export default function Navbar() {
               <div className="mt-8 border-t pt-6 border-white/10">
                 {isAuthenticated ? (
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="flex items-center gap-2 text-red-500 text-sm font-medium hover:opacity-80 transition-opacity"
                   >
                     <LogOut size={16} />

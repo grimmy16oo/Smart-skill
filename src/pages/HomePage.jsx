@@ -6,7 +6,7 @@ import { ArrowUpRight, Sparkles, Brain, Rocket, Users, Zap, Loader2 } from "luci
 import { useTheme } from "../context/ThemeContext";
 import { getFeaturedUsers } from "../services/userService";
 import StarRating from "../components/StarRating";
-import Navbar from "../components/Navbar";
+import UserAvatar from "../components/UserAvatar";
 
 const fadeUp = (delay = 0, y = 30) => ({
   initial: { opacity: 0, y, filter: "blur(4px)" },
@@ -51,7 +51,7 @@ export default function HomePage() {
           <div className="relative z-10 max-w-4xl">
             <motion.div {...fadeUp(0)} className="inline-flex items-center gap-2 bg-white/12 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full mb-6">
               <Sparkles size={12} className="text-white animate-pulse" />
-              <span className="text-[10px] font-bold tracking-widest uppercase">Learn • Teach • Connect</span>
+              <span className="text-[10px] font-bold tracking-widest uppercase">Learn / Teach / Connect</span>
             </motion.div>
 
             <motion.h1
@@ -111,14 +111,14 @@ export default function HomePage() {
       {/* 3. DESIGN STATEMENT TEXT */}
       <section className="max-w-7xl mx-auto px-8 grid lg:grid-cols-12 gap-8 items-start mb-24">
         <div className="lg:col-span-5">
-          <span className="text-xs font-bold text-[#e2593b] uppercase tracking-widest block mb-3">Behind the System</span>
+          <span className="text-xs font-bold text-[#e2593b] uppercase tracking-widest block mb-3">How it works</span>
           <h2 className="text-4xl lg:text-[42px] font-bold tracking-tight leading-[1.08]">
             Shaping Experiences That Make Growth Simpler
           </h2>
         </div>
         <div className="lg:col-span-6 lg:col-start-7">
           <p className={`text-lg leading-relaxed font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-            Our algorithmic logic maps knowledge gaps natively. Swap structures allow multi-tier portfolio expansion, peer auditing, and direct stack collaboration without frictional limitations.
+            Smart matching pairs what you can teach with what someone else wants to learn, then opens a direct path to plan the exchange together.
           </p>
         </div>
       </section>
@@ -127,9 +127,9 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-8 mb-32">
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { icon: <Brain size={22} />, title: "Share Skills", desc: "Tell people what you can teach and compile structural technical goals." },
-            { icon: <Users size={22} />, title: "Match People", desc: "Find users with active target nodes matching your experience metrics." },
-            { icon: <Rocket size={22} />, title: "Grow Together", desc: "Build structural full-stack frameworks, exchange notes, and ship components." },
+            { icon: <Brain size={22} />, title: "Share Skills", desc: "List what you can teach and what you want to learn next." },
+            { icon: <Users size={22} />, title: "Match People", desc: "Meet members whose goals line up with the skills you offer." },
+            { icon: <Rocket size={22} />, title: "Grow Together", desc: "Trade lessons, review work, and keep learning without money changing hands." },
           ].map((item, i) => (
             <motion.div
               key={item.title}
@@ -174,10 +174,10 @@ export default function HomePage() {
                   }`}
               >
                 <div className={`h-28 flex justify-center items-end relative ${isDark ? 'bg-gradient-to-b from-[#e2593b]/10 to-transparent' : 'bg-gradient-to-b from-[#e2593b]/5 to-transparent'}`}>
-                  <img
-                    src={member.avatar}
-                    alt={member.name}
-                    className={`w-22 h-22 rounded-full border-4 translate-y-11 object-cover bg-neutral-300 ${isDark ? 'border-[#0b0b0b]' : 'border-[#fcfcfc]'}`}
+                  <UserAvatar
+                    user={member}
+                    size="xl"
+                    className={`translate-y-11 border-4 ${isDark ? 'border-[#0b0b0b]' : 'border-[#fcfcfc]'}`}
                   />
                 </div>
 
@@ -190,7 +190,7 @@ export default function HomePage() {
 
                   <div className={`text-[10px] font-mono font-bold px-3 py-1 rounded-full mb-6 ${isDark ? 'bg-white/10 text-white' : 'bg-neutral-900/5 text-neutral-800'
                     }`}>
-                    {member.matchPercent || 85}% System Match
+                    {member.matchPercent || 85}% skill match
                   </div>
 
                   <Link
@@ -200,7 +200,7 @@ export default function HomePage() {
                         : 'bg-neutral-900 text-white hover:bg-neutral-800'
                       }`}
                   >
-                    Connect Matrix
+                    Discover match
                     <Zap size={13} fill="currentColor" />
                   </Link>
                 </div>

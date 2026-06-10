@@ -1,3 +1,5 @@
+import { getUserInitials, hasRealAvatar } from "../utils/avatar";
+
 const sizeClasses = {
   xs: "w-7 h-7 text-xs",
   sm: "w-8 h-8 text-xs",
@@ -6,21 +8,6 @@ const sizeClasses = {
   xl: "w-24 h-24 text-3xl",
   "2xl": "w-32 h-32 text-4xl",
 };
-
-export function hasRealAvatar(avatar) {
-  return Boolean(avatar && !avatar.includes("dicebear.com"));
-}
-
-export function getUserInitials(user) {
-  const name = user?.name || user?.displayName || user?.email || "User";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-
-  return name.slice(0, 2).toUpperCase();
-}
 
 export default function UserAvatar({
   user,

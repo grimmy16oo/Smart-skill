@@ -1,7 +1,8 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { MapPin, Star } from "lucide-react";
 import SkillBadge from "./SkillBadge";
-import UserAvatar, { hasRealAvatar } from "./UserAvatar";
+import UserAvatar from "./UserAvatar";
+import { hasRealAvatar } from "../utils/avatar";
 
 export default function SwipeCard({ user, onSwipe, isTop, index }) {
   const x = useMotionValue(0);

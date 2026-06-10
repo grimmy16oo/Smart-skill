@@ -1,54 +1,99 @@
-/**
- * Socket.IO chat - real-time message relay per match room.
- * Rooms: match:{matchId}
- * Persistence: REST API writes to MongoDB; sockets broadcast saved messages instantly.
- */
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import Match from "../models/Match.js";
+import Message from "../models/Message.js";
+import { serializeMessage } from "../utils/serializers.js";
+
+const getJwtSecret = () => process.env.JWT_SECRET || "dev-secret-change-me";
+const roomForMatch = (matchId) => `match:${matchId}`;
+
+function isObjectId(value) {
+  return mongoose.Types.ObjectId.isValid(value);
+}
+
+async function findAuthorizedMatch(matchId, userId) {
+  if (!isObjectId(matchId)) return null;
+  return Match.findOne({ _id: matchId, users: userId });
+}
+
+async function saveMessage(match, senderId, text) {
+  const message = await Message.create({
+    match: match._id,
+    sender: senderId,
+    text,
+  });
+
+  await Match.findByIdAndUpdate(match._id, {
+    lastMessageText: message.text,
+    lastMessageSender: message.sender,
+    lastMessageAt: message.createdAt,
+  });
+
+  return serializeMessage(message);
+}
 
 export function registerChatSocket(io) {
-  io.on("connection", (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+  io.use((socket, next) => {
+    try {
+      const token = socket.handshake.auth?.token;
 
-    socket.on("join_match", ({ matchId, uid }) => {
-      if (!matchId || !uid) {
-        socket.emit("chat_error", { message: "matchId and uid are required" });
-        return;
+      if (!token) {
+        return next(new Error("Authentication required"));
       }
 
-      const room = `match:${matchId}`;
-      socket.join(room);
-      socket.data.uid = uid;
-      socket.data.matchId = matchId;
+      const decoded = jwt.verify(token, getJwtSecret());
+      socket.data.userId = decoded.id;
+      return next();
+    } catch {
+      return next(new Error("Authentication failed"));
+    }
+  });
 
-      socket.emit("joined_match", { matchId });
+  io.on("connection", (socket) => {
+    socket.on("join_match", async ({ matchId }) => {
+      try {
+        const match = await findAuthorizedMatch(matchId, socket.data.userId);
+
+        if (!match) {
+          socket.emit("chat_error", { message: "Match not found" });
+          return;
+        }
+
+        socket.join(roomForMatch(matchId));
+        socket.data.matchId = matchId;
+        socket.emit("joined_match", { matchId });
+      } catch (error) {
+        socket.emit("chat_error", { message: error.message || "Could not join chat" });
+      }
     });
 
     socket.on("leave_match", ({ matchId }) => {
       if (matchId) {
-        socket.leave(`match:${matchId}`);
+        socket.leave(roomForMatch(matchId));
       }
     });
 
-    socket.on("send_message", (payload) => {
-      const { matchId, senderId, text, id, timestamp } = payload || {};
+    socket.on("send_message", async ({ matchId, text } = {}) => {
+      try {
+        const trimmed = text?.trim();
 
-      if (!matchId || !senderId || !text?.trim()) {
-        socket.emit("chat_error", { message: "Invalid message payload" });
-        return;
+        if (!matchId || !trimmed) {
+          socket.emit("chat_error", { message: "Message text is required" });
+          return;
+        }
+
+        const match = await findAuthorizedMatch(matchId, socket.data.userId);
+
+        if (!match) {
+          socket.emit("chat_error", { message: "Match not found" });
+          return;
+        }
+
+        const message = await saveMessage(match, socket.data.userId, trimmed);
+        io.to(roomForMatch(matchId)).emit("new_message", message);
+      } catch (error) {
+        socket.emit("chat_error", { message: error.message || "Failed to send message" });
       }
-
-      const message = {
-        id: id || `socket_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-        matchId,
-        senderId,
-        text: text.trim(),
-        timestamp: timestamp || new Date().toISOString(),
-      };
-
-      io.to(`match:${matchId}`).emit("new_message", message);
-    });
-
-    socket.on("disconnect", () => {
-      console.log(`Socket disconnected: ${socket.id}`);
     });
   });
 }

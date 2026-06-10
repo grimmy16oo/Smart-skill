@@ -32,14 +32,22 @@ export function serializeMatch(match) {
   if (!match) return null;
 
   const doc = typeof match.toObject === "function" ? match.toObject() : match;
+  const lastMessageAt = doc.lastMessageAt || null;
 
   return {
     id: toId(doc),
     users: (doc.users || []).map(toId),
     matchPercent: doc.matchPercent || 0,
     status: doc.status || "matched",
+    lastMessage: doc.lastMessageText
+      ? {
+          text: doc.lastMessageText,
+          senderId: toId(doc.lastMessageSender),
+          timestamp: lastMessageAt,
+        }
+      : null,
     createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
+    updatedAt: lastMessageAt || doc.updatedAt,
   };
 }
 

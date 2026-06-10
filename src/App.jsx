@@ -16,7 +16,7 @@ export default function App() {
         <BrowserRouter>
           <div className="flex flex-col h-screen">
             <Navbar />
-            <main className="flex-1 overflow-hidden">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden">
               <Routes>
                 <Route path="/"        element={<HomePage />} />
                 <Route path="/login"   element={<LoginPage />} />
