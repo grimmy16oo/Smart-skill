@@ -89,10 +89,11 @@ export async function getUsersForSwipe(currentUid, currentProfile) {
 
 export async function getFeaturedUsers(count = 3) {
   const data = await apiRequest(`/users/featured?limit=${count}`);
+
   return (data.users || []).map((user) => ({
     ...normalizeUser(user),
-    matchPercent: user.matchPercent || 85,
-    rating: user.rating || 4.8,
+    matchPercent: user.matchPercent ?? null, // or 0 if you prefer
+    rating: user.rating || 0,
   }));
 }
 

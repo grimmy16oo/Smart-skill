@@ -33,18 +33,23 @@ import {
 import SkillBadge from "../components/SkillBadge";
 import UserAvatar from "../components/UserAvatar";
 import { hasRealAvatar } from "../utils/avatar";
+import { div } from "framer-motion/client";
 
 function StatCard({ icon: Icon, value, label, tone = "text-[#e2593b]", isDark }) {
   return (
-    <div className={`rounded-2xl border p-5 transition-all duration-300 ${
+    
+    <>
+      <div className={`rounded-2xl border p-16 transition-all duration-300 ${
       isDark 
         ? "bg-white/[0.01] border-white/[0.06] shadow-md shadow-black/20" 
         : "bg-neutral-900/[0.01] border-neutral-900/[0.06] shadow-sm"
     }`}>
-      <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl ${
+      <div className={`mb-3 inline-flex h-12qcxd2 cccc w-9 items-center justify-center rounded-xl ${
         isDark ? "bg-white/[0.03]" : "bg-neutral-900/[0.03]"
-      } ${tone}`}>
-        <Icon size={16} />
+      }`}>
+        <div className={tone}>
+          <Icon size={16} />
+        </div>
       </div>
       <div className="text-2xl font-black tracking-tight leading-none">{value}</div>
       <div className={`mt-2 text-[10px] font-bold uppercase tracking-widest ${
@@ -53,6 +58,7 @@ function StatCard({ icon: Icon, value, label, tone = "text-[#e2593b]", isDark })
         {label}
       </div>
     </div>
+    </>
   );
 }
 
@@ -92,6 +98,41 @@ function parseSkills(value) {
     .split(/[,\n]/)
     .map((skill) => skill.trim())
     .filter(Boolean);
+}
+
+// Helper function for consistent button styling
+function ActionButton({ onClick, disabled, children, isDark, variant = "primary" }) {
+  const baseClasses = "px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97]";
+  
+  if (variant === "primary") {
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`${baseClasses} ${
+          isDark 
+            ? "bg-white text-black hover:bg-neutral-100" 
+            : "bg-[#e2593b] text-white hover:bg-[#d44a2e]" // Changed from neutral-950 to brand color for visibility
+        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+      >
+        {children}
+      </button>
+    );
+  }
+  
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClasses} ${
+        isDark 
+          ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" 
+          : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+    >
+      {children}
+    </button>
+  );
 }
 
 export default function ProfilePage() {
@@ -337,7 +378,7 @@ export default function ProfilePage() {
           <button
             onClick={() => navigate(-1)}
             className={`w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-[0.98] ${
-              isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+              isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
             }`}
           >
             Go Back
@@ -361,7 +402,9 @@ export default function ProfilePage() {
           <button
             onClick={() => navigate("/login")}
             className={`w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-[0.98] ${
-              isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
+              isDark 
+                ? "bg-white text-black hover:bg-neutral-100" 
+                : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
             }`}
           >
             <LogIn size={14} />
@@ -372,15 +415,37 @@ export default function ProfilePage() {
     );
   }
 
+  // Consistent input classes
+  const inputClasses = `px-3.5 py-2.5 text-sm font-medium rounded-xl border outline-none transition-all
+${
+  isDark
+    ? `
+      bg-neutral-900
+      text-white
+      border-white/10
+      placeholder:text-neutral-500
+      focus:border-[#e2593b]
+    `
+    : `
+      bg-white
+      text-neutral-900
+      border-neutral-300
+      placeholder:text-neutral-500
+      focus:border-[#e2593b]
+    `
+}`;
+
+  const textareaClasses = `${inputClasses} min-h-[90px] resize-none`;
+
   return (
-    <div className={`flex-1 min-h-0 overflow-y-auto transition-colors duration-300 border-t ${
-      isDark ? "bg-[#0b0b0b] text-white border-white/[0.04]" : "bg-[#fcfcfc] text-neutral-900 border-neutral-900/[0.04]"
-    }`}>
+    <div className={`flex-1 overflow-y-auto transition-colors duration-300 border-t ${
+    isDark ? "bg-[#0b0b0b] text-white border-white/[0.04]" : "bg-[#fcfcfc] text-neutral-900 border-neutral-900/[0.04]"
+  }`}>
       <div className="mx-auto max-w-5xl px-6 py-10 space-y-6">
         
         {/* CORE PROFILE PLINTH MODULE */}
         <section className={`overflow-hidden rounded-[32px] border transition-all duration-300 ${
-          isDark ? "bg-white/[0.01] border-white/[0.06] shadow-xl shadow-black/40" : "bg-neutral-900/[0.01] border-neutral-900/[0.06] shadow-sm"
+          isDark ? "bg-white/[0.01] border-white/[0.06] shadow-xl shadow-black/40" : "bg-white border-neutral-200/50 shadow-sm"
         }`}>
           {/* Subtle accent line for profile identity. */}
           <div className="h-[4px] bg-gradient-to-r from-[#e2593b] via-indigo-500 to-cyan-500" />
@@ -392,7 +457,7 @@ export default function ProfilePage() {
                   <UserAvatar
                     user={{ ...displayProfile, avatar: form.avatar || displayProfile.avatar }}
                     size="2xl"
-                    className={`ring-4 ${isDark ? "ring-[#0b0b0b]" : "ring-[#fcfcfc]"} rounded-[24px]`}
+                    className={`ring-4 ${isDark ? "ring-[#0b0b0b]" : "ring-white"} rounded-[24px]`}
                   />
                   {isOwnProfile && (
                     <button
@@ -400,7 +465,7 @@ export default function ProfilePage() {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
                       className={`absolute bottom-[-4px] right-[-4px] w-8 h-8 rounded-xl flex items-center justify-center border shadow-lg transition-transform active:scale-90 ${
-                        isDark ? "bg-white border-neutral-200 text-black hover:bg-neutral-100" : "bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
+                        isDark ? "bg-white border-neutral-200 text-black hover:bg-neutral-100" : "bg-white border-neutral-200 text-neutral-900 hover:bg-neutral-50"
                       }`}
                       title="Upload profile photo"
                     >
@@ -445,73 +510,33 @@ export default function ProfilePage() {
                 {isOwnProfile ? (
                   edit ? (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEdit(false);
-                          setError("");
-                        }}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border flex items-center gap-1.5 transition-all active:scale-[0.97] ${
-                          isDark ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
-                        }`}
-                      >
+                      <ActionButton onClick={() => { setEdit(false); setError(""); }} isDark={isDark} variant="secondary">
                         <X size={13} />
                         Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        disabled={saving}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
-                          isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
-                        }`}
-                      >
+                      </ActionButton>
+                      <ActionButton onClick={handleSave} disabled={saving} isDark={isDark} variant="primary">
                         {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                         Save
-                      </button>
+                      </ActionButton>
                     </>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEdit(true);
-                        setSaved(false);
-                        setError("");
-                      }}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
-                        isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
-                      }`}
-                    >
+                    <ActionButton onClick={() => { setEdit(true); setSaved(false); setError(""); }} isDark={isDark} variant="primary">
                       <Edit3 size={13} />
                       Edit profile
-                    </button>
+                    </ActionButton>
                   )
                 ) : (
                   <>
                     {isMatched && (
                       <>
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/chat?matchId=${activeMatch.id}`)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
-                            isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
-                          }`}
-                        >
+                        <ActionButton onClick={() => navigate(`/chat?matchId=${activeMatch.id}`)} isDark={isDark} variant="primary">
                           <MessageSquare size={13} />
                           Message
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowReviewForm(!showReviewForm)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border flex items-center gap-1.5 transition-all active:scale-[0.97] ${
-                            isDark 
-                              ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" 
-                              : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
-                          }`}
-                        >
+                        </ActionButton>
+                        <ActionButton onClick={() => setShowReviewForm(!showReviewForm)} isDark={isDark} variant="secondary">
                           <Star size={13} />
                           {showReviewForm ? "Close Review" : "Write Review"}
-                        </button>
+                        </ActionButton>
                       </>
                     )}
                   </>
@@ -529,11 +554,7 @@ export default function ProfilePage() {
                       <input
                         value={form.name}
                         onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))}
-                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all ${
-                          isDark 
-                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
-                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
-                        }`}
+                        className={inputClasses}
                         maxLength={80}
                       />
                     </label>
@@ -542,11 +563,7 @@ export default function ProfilePage() {
                       <input
                         value={form.location}
                         onChange={(e) => setForm((current) => ({ ...current, location: e.target.value }))}
-                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all ${
-                          isDark 
-                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
-                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
-                        }`}
+                        className={inputClasses}
                         maxLength={100}
                       />
                     </label>
@@ -555,11 +572,7 @@ export default function ProfilePage() {
                       <textarea
                         value={form.bio}
                         onChange={(e) => setForm((current) => ({ ...current, bio: e.target.value }))}
-                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all min-h-[80px] resize-none ${
-                          isDark 
-                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
-                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
-                        }`}
+                        className={`${inputClasses} min-h-[80px] resize-none`}
                         maxLength={500}
                       />
                     </label>
@@ -570,11 +583,7 @@ export default function ProfilePage() {
                       <textarea
                         value={form.skillsOffered}
                         onChange={(e) => setForm((current) => ({ ...current, skillsOffered: e.target.value }))}
-                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all min-h-[90px] resize-none placeholder-neutral-500 ${
-                          isDark 
-                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
-                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
-                        }`}
+                        className={textareaClasses}
                         placeholder="React, Assembly, Shell Scripting"
                       />
                     </label>
@@ -585,11 +594,7 @@ export default function ProfilePage() {
                       <textarea
                         value={form.skillsWanted}
                         onChange={(e) => setForm((current) => ({ ...current, skillsWanted: e.target.value }))}
-                        className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all min-h-[90px] resize-none placeholder-neutral-500 ${
-                          isDark 
-                            ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
-                            : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
-                        }`}
+                        className={textareaClasses}
                         placeholder="Queuing Theory, Python, UI Design"
                       />
                     </label>
@@ -625,7 +630,7 @@ export default function ProfilePage() {
               {/* FLOATING ACTION MINI PANEL */}
               {isOwnProfile ? (
                 <div className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
-                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-900/[0.02] border-neutral-900/[0.06]"
+                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"
                 }`}>
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-xl bg-[#e2593b]/10 text-[#e2593b] shrink-0">
@@ -633,7 +638,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="text-xs font-bold tracking-tight uppercase tracking-wider">Profile photo</p>
-                      <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                      <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-500"}`}>
                         JPG, PNG, or WebP architecture footprints matching under 3 MB bounds.
                       </p>
                     </div>
@@ -643,7 +648,7 @@ export default function ProfilePage() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
                     className={`mt-4 w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                      isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-950"
+                      isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-200 hover:bg-neutral-100 text-neutral-700"
                     }`}
                   >
                     {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
@@ -652,7 +657,7 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
-                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-900/[0.02] border-neutral-900/[0.06]"
+                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"
                 }`}>
                   <div className="flex items-start gap-3">
                     <div className={`p-2 rounded-xl shrink-0 ${isMatched ? "bg-emerald-500/10 text-emerald-500" : "bg-blue-500/10 text-blue-500"}`}>
@@ -660,7 +665,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="text-xs font-bold tracking-tight uppercase tracking-wider">Connection</p>
-                      <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                      <p className={`text-[10px] font-medium mt-0.5 leading-normal ${isDark ? "text-neutral-500" : "text-neutral-500"}`}>
                         {isMatched 
                           ? `You are connected with ${displayProfile.name}. You can chat and exchange skills!`
                           : `Discover and like ${displayProfile.name} on the discover page to match.`
@@ -673,7 +678,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => navigate(`/chat?matchId=${activeMatch.id}`)}
                       className={`mt-4 w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                        isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-950"
+                        isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-200 hover:bg-neutral-100 text-neutral-700"
                       }`}
                     >
                       <MessageSquare size={12} />
@@ -684,7 +689,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => navigate("/swipe")}
                       className={`mt-4 w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                        isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-950"
+                        isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-200 hover:bg-neutral-100 text-neutral-700"
                       }`}
                     >
                       Go to Discover
@@ -716,7 +721,7 @@ export default function ProfilePage() {
               <form
                 onSubmit={handleReviewSubmit}
                 className={`p-6 rounded-[24px] border space-y-4 ${
-                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-900/[0.02] border-neutral-900/[0.06]"
+                  isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-neutral-200"
                 }`}
               >
                 <h3 className="text-sm font-black uppercase tracking-widest text-[#e2593b]">Write a Review</h3>
@@ -729,11 +734,11 @@ export default function ProfilePage() {
                         key={star}
                         type="button"
                         onClick={() => setReviewRating(star)}
-                        className="transition-transform active:scale-90 text-amber-500"
+                        className="transition-transform active:scale-90"
                       >
                         <Star
                           size={20}
-                          className={star <= reviewRating ? "fill-amber-500" : "text-neutral-400"}
+                          className={`${star <= reviewRating ? "fill-amber-500 text-amber-500" : "text-neutral-400"}`}
                         />
                       </button>
                     ))}
@@ -747,11 +752,7 @@ export default function ProfilePage() {
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
                     placeholder="Describe your learning session or collaboration experience..."
-                    className={`px-3.5 py-2.5 text-xs font-medium border rounded-xl outline-none transition-all min-h-[90px] resize-none ${
-                      isDark 
-                        ? "bg-white/[0.02] border-white/[0.06] focus:border-white/25 text-white" 
-                        : "bg-neutral-900/[0.02] border-neutral-900/[0.06] focus:border-neutral-900/25 text-neutral-900"
-                    }`}
+                    className={`${textareaClasses} min-h-[90px]`}
                   />
                 </div>
 
@@ -760,21 +761,17 @@ export default function ProfilePage() {
                 )}
 
                 <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowReviewForm(false)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all active:scale-[0.97] ${
-                      isDark ? "border-white/10 hover:bg-white/[0.04] text-neutral-300" : "border-neutral-900/10 hover:bg-neutral-900/[0.04] text-neutral-700"
-                    }`}
-                  >
+                  <ActionButton onClick={() => setShowReviewForm(false)} isDark={isDark} variant="secondary">
                     Cancel
-                  </button>
+                  </ActionButton>
                   <button
                     type="submit"
                     disabled={submittingReview}
                     className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.97] ${
-                      isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-neutral-950 text-white hover:bg-neutral-800"
-                    }`}
+                      isDark 
+                        ? "bg-white text-black hover:bg-neutral-100" 
+                        : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                    } ${submittingReview ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {submittingReview ? <Loader2 size={13} className="animate-spin" /> : "Submit Review"}
                   </button>
@@ -786,7 +783,7 @@ export default function ProfilePage() {
 
         {/* TABS DIRECTORY STRUCTURE BLOCK */}
         <section className={`rounded-[24px] border p-5 transition-all duration-300 ${
-          isDark ? "bg-white/[0.01] border-white/[0.06]" : "bg-neutral-900/[0.01] border-neutral-900/[0.06]"
+          isDark ? "bg-white/[0.01] border-white/[0.06]" : "bg-white border-neutral-200"
         }`}>
           <div className="mb-6 flex gap-1.5 p-1 rounded-xl w-fit bg-transparent">
             {["skills", "reviews"].map((item) => (
@@ -797,10 +794,10 @@ export default function ProfilePage() {
                   tab === item 
                     ? isDark 
                       ? "bg-white text-black shadow-md shadow-black/20" 
-                      : "bg-neutral-950 text-white shadow-sm"
+                      : "bg-neutral-900 text-white shadow-sm"
                     : isDark
                       ? "text-neutral-400 hover:text-white hover:bg-white/[0.03]"
-                      : "text-neutral-500 hover:text-neutral-950 hover:bg-neutral-900/[0.03]"
+                      : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100"
                 }`}
               >
                 {item === "skills" ? "Skills" : "Reviews"}
@@ -863,13 +860,13 @@ export default function ProfilePage() {
                   </div>
                 ) : reviews.length === 0 ? (
                   <div className={`py-12 text-center rounded-2xl border border-dashed flex flex-col items-center justify-center ${
-                    isDark ? "border-white/[0.06] text-white/30" : "border-neutral-900/[0.06] text-neutral-400"
+                    isDark ? "border-white/[0.06] text-white/30" : "border-neutral-200 text-neutral-400"
                   }`}>
                     <div className="w-9 h-9 rounded-xl bg-neutral-500/10 flex items-center justify-center mb-3 opacity-60">
                       <TrendingUp size={14} />
                     </div>
                     <p className="text-xs font-medium">No reviews yet.</p>
-                    <p className={`text-[10px] font-medium mt-1 ${isDark ? "text-neutral-600" : "text-neutral-400"}`}>
+                    <p className={`text-[10px] font-medium mt-1 ${isDark ? "text-neutral-600" : "text-neutral-500"}`}>
                       {isOwnProfile 
                         ? "Reviews can be added after completed skill exchanges."
                         : `Be the first to review your skill exchange with ${displayProfile.name}!`
@@ -881,7 +878,7 @@ export default function ProfilePage() {
                     <div
                       key={rev._id || rev.id}
                       className={`p-4 rounded-2xl border transition-all ${
-                        isDark ? "bg-white/[0.01] border-white/[0.06]" : "bg-neutral-900/[0.01] border-neutral-900/[0.06]"
+                        isDark ? "bg-white/[0.01] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -894,12 +891,12 @@ export default function ProfilePage() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-0.5 text-amber-500">
+                        <div className="flex items-center gap-0.5">
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
                               size={12}
-                              className={i < rev.rating ? "fill-amber-500" : "text-neutral-400"}
+                              className={`${i < rev.rating ? "fill-amber-500 text-amber-500" : "text-neutral-400"}`}
                             />
                           ))}
                         </div>
@@ -914,6 +911,7 @@ export default function ProfilePage() {
             )}
           </AnimatePresence>
         </section>
+        <div className="h-px" aria-hidden="true" />
       </div>
     </div>
   );

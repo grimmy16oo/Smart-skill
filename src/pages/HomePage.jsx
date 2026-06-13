@@ -189,13 +189,10 @@ export default function HomePage() {
                   </Link>
 
                   <div className="mb-4">
-                    <StarRating rating={member.rating || 4.8} />
+                    <StarRating rating={member.rating ?? 0} />
                   </div>
 
-                  <div className={`text-[10px] font-mono font-bold px-3 py-1 rounded-full mb-6 ${isDark ? 'bg-white/10 text-white' : 'bg-neutral-900/5 text-neutral-800'
-                    }`}>
-                    {member.matchPercent || 85}% skill match
-                  </div>
+                
 
                   <Link
                     to={`/profile/${member.uid}`}

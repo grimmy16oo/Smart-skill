@@ -274,6 +274,7 @@ export default function SwipePage() {
                             index={index}
                             isTop={index === 0}
                             onSwipe={handleSwipe}
+                            isDark={isDark}
                           />
                         </div>
                       );
@@ -287,14 +288,14 @@ export default function SwipePage() {
               <button
                 onClick={() => handleSwipe("skip")}
                 disabled={!users.length || swiping}
-                className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
+                className={`w-20 h-12 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
                   isDark 
                     ? "border-white/[0.08] bg-white/[0.02] text-red-400 hover:bg-red-500/10 hover:border-red-500/30" 
                     : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-red-500 hover:bg-red-500/5 hover:border-red-500/20 shadow-sm"
                 }`}
                 title="Pass"
               >
-                <X size={20} />
+                Reject
               </button>
 
               <button
@@ -313,14 +314,14 @@ export default function SwipePage() {
               <button
                 onClick={() => handleSwipe("like")}
                 disabled={!users.length || swiping}
-                className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
+                className={`w-20 h-12 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
                   isDark 
                     ? "border-white/[0.08] bg-white/[0.02] text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30" 
                     : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/20 shadow-sm"
                 }`}
                 title="Like"
               >
-                <Heart size={20} className="fill-current" />
+                Accept
               </button>
             </div>
           </div>

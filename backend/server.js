@@ -23,7 +23,7 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 5000;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
-const allowedOrigins = [CLIENT_ORIGIN, "http://localhost:5173", "http://127.0.0.1:5173"];
+const allowedOrigins = [CLIENT_ORIGIN, "http://localhost:5173", "http://127.0.0.1:5173","https://relaxed-entremet-d0f1fd.netlify.app/"];
 
 const io = new Server(server, {
   cors: {

@@ -26,8 +26,8 @@ router.get("/featured", async (req, res) => {
       success: true,
       users: users.map((user) => ({
         ...serializeUser(user),
-        matchPercent: 85,
-        rating: user.rating || 4.8,
+         matchPercent: user.matchPercent || 0,
+        rating: user.rating || 0,
       })),
     });
   } catch (error) {

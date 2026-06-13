@@ -73,16 +73,16 @@ function Input({
 
       <div className="relative">
         <input
-          type={showToggle && showPassword ? "text" : type}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={`Enter your ${placeholder.toLowerCase()}`}
-          className={`input w-full bg-base-200/50 dark:bg-[#121212] border text-sm text-base-content dark:text-white placeholder-base-content/30 transition-all duration-200 focus:outline-none rounded-lg h-11 ${
-            error 
-              ? "border-error focus:border-error" 
-              : "border-base-300 dark:border-neutral hover:border-base-content/20 focus:border-[#C06B51]"
-          }`}
-        />
+  type={showToggle && showPassword ? "text" : type}
+  value={value}
+  onChange={(e) => setValue(e.target.value)}
+  placeholder={`Enter your ${placeholder.toLowerCase()}`}
+  className={`input w-full bg-base-200/50 dark:bg-[#121212] border text-sm text-base-content dark:text-white placeholder:text-neutral-400 dark:placeholder:text-white/30 transition-all duration-200 focus:outline-none rounded-lg h-11 ${
+    error 
+      ? "border-error focus:border-error" 
+      : "border-base-300 dark:border-neutral hover:border-base-content/20 focus:border-[#C06B51]"
+  }`}
+/>
 
         {showToggle && (
           <button
@@ -128,16 +128,16 @@ function Textarea({ icon, value, setValue, placeholder, error, required }) {
       </label>
 
       <textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={`Tell us a little bit about yourself...`}
-        className={`textarea w-full bg-base-200/50 dark:bg-[#121212] border text-sm text-base-content dark:text-white placeholder-base-content/30 transition-all duration-200 focus:outline-none rounded-lg resize-none p-3 line-clamp-3 ${
-          error 
-            ? "border-error focus:border-error" 
-            : "border-base-300 dark:border-neutral hover:border-base-content/20 focus:border-[#C06B51]"
-        }`}
-        rows={2}
-      />
+  value={value}
+  onChange={(e) => setValue(e.target.value)}
+  placeholder={`Tell us a little bit about yourself...`}
+  className={`textarea w-full bg-base-200/50 dark:bg-[#121212] border text-sm text-base-content dark:text-white placeholder:text-neutral-400 dark:placeholder:text-white/30 transition-all duration-200 focus:outline-none rounded-lg resize-none p-3 line-clamp-3 ${
+    error 
+      ? "border-error focus:border-error" 
+      : "border-base-300 dark:border-neutral hover:border-base-content/20 focus:border-[#C06B51]"
+  }`}
+  rows={2}
+/>
 
       <AnimatePresence>
         {error && (
@@ -336,7 +336,7 @@ export default function LoginPage() {
                 className="alert alert-error bg-error/10 border-error/20 text-error text-xs py-3.5 px-4 rounded-lg flex items-start gap-2.5"
               >
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>{errors.general}</span>
+                <span className="text-white">{errors.general}</span>
               </motion.div>
             )}
 
@@ -348,7 +348,7 @@ export default function LoginPage() {
                 className="alert alert-success bg-success/10 border-success/20 text-success text-xs py-3.5 px-4 rounded-lg flex items-start gap-2.5"
               >
                 <CheckCircle size={16} className="shrink-0 mt-0.5" />
-                <span>{successMessage}</span>
+                <span className="text-white">{successMessage}</span>
               </motion.div>
             )}
           </AnimatePresence>
