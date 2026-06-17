@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Zap, X, Heart, LogIn, Loader2, MessageCircle, Sparkles, MapPin } from "lucide-react";
+import { RotateCcw, Zap, LogIn, Loader2, MessageCircle, Sparkles, MapPin } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { getUsersForSwipe, getUserProfile } from "../services/userService";

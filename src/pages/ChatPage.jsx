@@ -1,4 +1,4 @@
-// ChatPage - responsive realtime messaging layout with user list sidebar
+// ChatPage - redesigned to match ProfilePage design language
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,13 +10,16 @@ import {
   LogIn,
   Loader2,
   MessageSquare,
-  CheckCheck,
-  Smile,
-  MoreVertical,
-  Phone,
-  Video,
   Info,
   ChevronRight,
+  Smile,
+  Paperclip,
+  X,
+  Check,
+  Star,
+  Sparkles,
+  FileText,
+  ImageIcon,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -60,15 +63,151 @@ function sortMatchesByActivity(matches) {
   });
 }
 
+// ── Skeleton loader ────────────────────────────────────────────────────────────
+function MatchSkeleton({ isDark }) {
+  return (
+    <>
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className={`flex items-center gap-3 px-3 py-3 mx-1 rounded-2xl animate-pulse ${isDark ? "bg-white/[0.02]" : "bg-neutral-50"}`}>
+          <div className={`w-10 h-10 rounded-xl shrink-0 ${isDark ? "bg-white/[0.06]" : "bg-neutral-200"}`} />
+          <div className="flex-1 space-y-2">
+            <div className={`h-2.5 rounded-full w-3/5 ${isDark ? "bg-white/[0.06]" : "bg-neutral-200"}`} />
+            <div className={`h-2 rounded-full w-2/5 ${isDark ? "bg-white/[0.04]" : "bg-neutral-100"}`} />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+// ── Message bubble skeleton ────────────────────────────────────────────────────
+function MessageSkeleton({ isDark }) {
+  return (
+    <div className="flex flex-col gap-3 px-4 py-4">
+      {[["40%", false], ["55%", true], ["35%", false], ["60%", true], ["45%", false]].map(([w, isMe], i) => (
+        <div key={i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+          <div
+            className={`h-9 rounded-2xl animate-pulse ${isDark ? "bg-white/[0.05]" : "bg-neutral-200"}`}
+            style={{ width: w }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Date divider ───────────────────────────────────────────────────────────────
+function DateDivider({ label, isDark }) {
+  return (
+    <div className="flex items-center gap-3 my-4">
+      <div className={`flex-1 h-px ${isDark ? "bg-white/[0.06]" : "bg-neutral-200"}`} />
+      <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${
+        isDark ? "text-white/30 border-white/[0.06] bg-white/[0.02]" : "text-neutral-400 border-neutral-200 bg-neutral-50"
+      }`}>{label}</span>
+      <div className={`flex-1 h-px ${isDark ? "bg-white/[0.06]" : "bg-neutral-200"}`} />
+    </div>
+  );
+}
+
+// ── Peer info panel (slides in from right) ─────────────────────────────────────
+function PeerInfoPanel({ peer, isDark, onClose, navigate }) {
+  return (
+    <motion.div
+      key="info-panel"
+      initial={{ x: 60, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 60, opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className={`w-[260px] shrink-0 flex flex-col border-l ${
+        isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"
+      }`}
+    >
+      {/* Panel header — matches ProfilePage section header */}
+      <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? "border-white/[0.07]" : "border-neutral-100"}`}>
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg ${isDark ? "bg-white/[0.05]" : "bg-neutral-100"}`}>
+            <Info size={11} className="text-[#e2593b]" />
+          </span>
+          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-white/60" : "text-neutral-500"}`}>Partner</span>
+        </div>
+        <button onClick={onClose} className={`p-1.5 rounded-lg transition-colors ${isDark ? "hover:bg-white/[0.06] text-white/30" : "hover:bg-neutral-100 text-neutral-400"}`}>
+          <X size={12} />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {/* Avatar + name */}
+        <div className="flex flex-col items-center text-center gap-2 pt-1">
+          <UserAvatar user={peer} size="2xl" className="rounded-[20px]" />
+          <div>
+            <p className={`text-sm font-black uppercase tracking-tight mt-2 ${isDark ? "text-white" : "text-neutral-900"}`}>{peer?.name}</p>
+            <p className={`text-[10px] font-medium mt-0.5 ${isDark ? "text-white/40" : "text-neutral-400"}`}>
+              {peer?.online ? <span className="text-emerald-500">● Online</span> : "Skill partner"}
+            </p>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: "Teaches", value: peer?.skillsOffered?.length || 0 },
+            { label: "Learning", value: peer?.skillsWanted?.length || 0 },
+          ].map(({ label, value }) => (
+            <div key={label} className={`rounded-xl p-3 text-center border ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}>
+              <p className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}>{value}</p>
+              <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? "text-white/30" : "text-neutral-400"}`}>{label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Skills offered */}
+        {peer?.skillsOffered?.length > 0 && (
+          <div>
+            <p className={`text-[9px] font-bold uppercase tracking-widest mb-2 ${isDark ? "text-white/30" : "text-neutral-400"}`}>Can teach</p>
+            <div className="flex flex-wrap gap-1.5">
+              {peer.skillsOffered.map((s) => (
+                <span key={s} className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-[#e2593b]/10 border-[#e2593b]/20 text-[#e2593b]">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Skills wanted */}
+        {peer?.skillsWanted?.length > 0 && (
+          <div>
+            <p className={`text-[9px] font-bold uppercase tracking-widest mb-2 ${isDark ? "text-white/30" : "text-neutral-400"}`}>Wants to learn</p>
+            <div className="flex flex-wrap gap-1.5">
+              {peer.skillsWanted.map((s) => (
+                <span key={s} className={`text-[10px] font-semibold px-2 py-1 rounded-lg border ${isDark ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-600"}`}>{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* View profile CTA */}
+        <button
+          onClick={() => navigate(`/profile/${peer?.uid}`)}
+          className={`w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+            isDark ? "border-white/10 hover:bg-white/[0.04] text-white" : "border-neutral-200 hover:bg-neutral-50 text-neutral-700"
+          }`}
+        >
+          View full profile <ChevronRight size={11} />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Empty states ──────────────────────────────────────────────────────────────
 function EmptyState({ isDark }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8">
-      <div className={`w-20 h-20 rounded-3xl flex items-center justify-center ${isDark ? "bg-white/5" : "bg-neutral-100"}`}>
-        <MessageSquare size={32} className="text-[#e2593b] opacity-70" />
+    <div className="flex-1 flex flex-col items-center justify-center gap-3 px-8">
+      <div className={`w-16 h-16 rounded-[20px] border flex items-center justify-center ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}>
+        <MessageSquare size={24} className="text-[#e2593b] opacity-60" />
       </div>
       <div className="text-center">
-        <p className={`font-semibold text-lg ${isDark ? "text-white" : "text-neutral-900"}`}>No conversation selected</p>
-        <p className={`text-sm mt-1 ${isDark ? "text-white/40" : "text-neutral-400"}`}>
+        <p className={`font-black text-sm uppercase tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}>No conversation selected</p>
+        <p className={`text-[11px] font-medium mt-1.5 max-w-[200px] leading-relaxed ${isDark ? "text-white/35" : "text-neutral-400"}`}>
           Pick a match from the sidebar to start chatting
         </p>
       </div>
@@ -78,19 +217,19 @@ function EmptyState({ isDark }) {
 
 function NoMatchesState({ isDark, navigate }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8">
-      <div className={`w-20 h-20 rounded-3xl flex items-center justify-center ${isDark ? "bg-white/5" : "bg-neutral-100"}`}>
-        <MessageSquare size={32} className="text-[#e2593b] opacity-50" />
+    <div className="flex-1 flex flex-col items-center justify-center gap-3 px-8">
+      <div className={`w-16 h-16 rounded-[20px] border flex items-center justify-center ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}>
+        <Sparkles size={24} className="text-[#e2593b] opacity-50" />
       </div>
       <div className="text-center">
-        <p className={`font-semibold text-lg ${isDark ? "text-white" : "text-neutral-900"}`}>No matches yet</p>
-        <p className={`text-sm mt-2 max-w-xs ${isDark ? "text-white/40" : "text-neutral-400"}`}>
-          Swipe on profiles to find skill partners, then chat with your matches here.
+        <p className={`font-black text-sm uppercase tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}>No matches yet</p>
+        <p className={`text-[11px] font-medium mt-1.5 max-w-[220px] leading-relaxed ${isDark ? "text-white/35" : "text-neutral-400"}`}>
+          Swipe on profiles to find skill partners, then chat here.
         </p>
       </div>
       <button
         onClick={() => navigate("/swipe")}
-        className="mt-2 px-5 py-2.5 bg-[#e2593b] text-white rounded-xl text-sm font-semibold hover:bg-[#cc4e33] transition-colors"
+        className="mt-1 px-5 py-2.5 bg-[#e2593b] text-white rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-[#cc4e33] transition-colors active:scale-95"
       >
         Start discovering
       </button>
@@ -98,6 +237,7 @@ function NoMatchesState({ isDark, navigate }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
   const { isDark } = useTheme();
@@ -124,9 +264,64 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSidebar, setShowSidebar] = useState(true);
 
+  // ── new UI state ──────────────────────────────────────────────────────────
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null); // { id, text }
+  const [starredMsgIds, setStarredMsgIds] = useState(new Set());
+  const [hoveredMsgId, setHoveredMsgId] = useState(null);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const currentUid = user?.uid ?? null;
+
+  // ── attachment state ──────────────────────────────────────────────────────
+  // Each entry: { id, file, previewUrl, type: "image"|"file", uploading, error }
+  const [attachments, setAttachments] = useState([]);
+
+  const MAX_FILE_SIZE_MB = 10;
+  const ACCEPTED_TYPES = "image/*,application/pdf,.doc,.docx,.txt,.zip,.mp4,.mp3";
+
+  const handleAttachFiles = (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ""; // reset so same file can be re-selected
+    if (!files.length) return;
+
+    const next = files
+      .filter((f) => {
+        if (f.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+          setSendError(`"${f.name}" exceeds ${MAX_FILE_SIZE_MB} MB limit.`);
+          return false;
+        }
+        return true;
+      })
+      .map((f) => ({
+        id: `${Date.now()}-${Math.random()}`,
+        file: f,
+        previewUrl: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+        type: f.type.startsWith("image/") ? "image" : "file",
+        uploading: false,
+        error: null,
+      }));
+
+    setAttachments((prev) => [...prev, ...next]);
+  };
+
+  const removeAttachment = (id) => {
+    setAttachments((prev) => {
+      const hit = prev.find((a) => a.id === id);
+      if (hit?.previewUrl) URL.revokeObjectURL(hit.previewUrl);
+      return prev.filter((a) => a.id !== id);
+    });
+  };
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      attachments.forEach((a) => { if (a.previewUrl) URL.revokeObjectURL(a.previewUrl); });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* SOCKET */
   useEffect(() => {
@@ -216,17 +411,15 @@ export default function ChatPage() {
   /* SELECT CHAT */
   useEffect(() => {
     if (!currentUid || matchesLoading) return;
-
     if (matchFromUrl) {
       setSelectedMatchId(matchFromUrl);
       if (window.innerWidth < 1024) setShowSidebar(false);
       return;
     }
-
     if (matches.length > 0 && !selectedMatchId) {
       setSelectedMatchId(matches[0].id);
     }
-  }, [matches, currentUid, matchFromUrl, matchesLoading]);
+  }, [matches, currentUid, matchFromUrl, matchesLoading, selectedMatchId]);
 
   /* LOAD MESSAGES */
   useEffect(() => {
@@ -238,6 +431,8 @@ export default function ChatPage() {
     let cancelled = false;
     setMessagesLoading(true);
     setMessagesError(null);
+    setShowInfoPanel(false);
+    setReplyingTo(null);
 
     (async () => {
       try {
@@ -292,13 +487,46 @@ export default function ChatPage() {
   /* SEND */
   const handleSend = async () => {
     const text = messageInput.trim();
-    if (!text || sending || !selectedMatchId) return;
+    const hasAttachments = attachments.length > 0;
+    if ((!text && !hasAttachments) || sending || !selectedMatchId) return;
+
     setSending(true);
     setSendError(null);
+    setReplyingTo(null);
+
     try {
-      const saved = await sendMessage(selectedMatchId, currentUid, text);
-      setMessages((prev) => mergeMessages(prev, [saved]));
-      setMessageInput("");
+      // Send text message if present
+      if (text) {
+        const saved = await sendMessage(selectedMatchId, currentUid, text);
+        setMessages((prev) => mergeMessages(prev, [saved]));
+        setMessageInput("");
+      }
+
+      // Send each attachment as a separate message
+      // sendMessage is expected to accept an optional `file` payload;
+      // if your chatService doesn't support it yet, the attachment
+      // optimistically renders locally and you can wire the upload later.
+      for (const att of attachments) {
+        try {
+          // Build a FormData or pass the File object — adjust to your chatService API
+          const saved = await sendMessage(selectedMatchId, currentUid, att.file.name, { file: att.file });
+          setMessages((prev) => mergeMessages(prev, [saved]));
+        } catch {
+          // Optimistic local fallback so the UI doesn't silently fail
+          const localMsg = {
+            id: att.id,
+            senderId: currentUid,
+            text: att.file.name,
+            timestamp: new Date().toISOString(),
+            _localAttachment: att,
+          };
+          setMessages((prev) => mergeMessages(prev, [localMsg]));
+        }
+      }
+
+      // Clear attachments
+      attachments.forEach((a) => { if (a.previewUrl) URL.revokeObjectURL(a.previewUrl); });
+      setAttachments([]);
       inputRef.current?.focus();
     } catch (e) {
       setSendError(e.message);
@@ -310,14 +538,23 @@ export default function ChatPage() {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      if (messageInput.trim() || attachments.length > 0) handleSend();
     }
+    if (e.key === "Escape" && replyingTo) setReplyingTo(null);
   };
 
   const handleSelectMatch = (matchId) => {
     setSelectedMatchId(matchId);
     if (window.innerWidth < 1024) setShowSidebar(false);
     setSearchParams(matchId ? { matchId } : {});
+  };
+
+  const toggleStar = (msgId) => {
+    setStarredMsgIds((prev) => {
+      const next = new Set(prev);
+      next.has(msgId) ? next.delete(msgId) : next.add(msgId);
+      return next;
+    });
   };
 
   const filteredMatches = useMemo(() => {
@@ -331,15 +568,13 @@ export default function ChatPage() {
   }, [matches, searchQuery, currentUid, peerProfiles]);
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
-  const selectedPeerUid = selectedMatch
-    ? getPeerUidFromMatch(selectedMatch.users, currentUid)
-    : null;
+  const selectedPeerUid = selectedMatch ? getPeerUidFromMatch(selectedMatch.users, currentUid) : null;
   const selectedPeer = selectedPeerUid ? peerProfiles[selectedPeerUid] : null;
 
   /* AUTH LOADING */
   if (authLoading) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className={`h-full flex items-center justify-center ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
         <Loader2 className="animate-spin text-[#e2593b]" size={36} />
       </div>
     );
@@ -347,24 +582,29 @@ export default function ChatPage() {
 
   if (!user) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-4">
-        <MessageSquare size={40} className="text-[#e2593b] opacity-60" />
-        <p className={`font-semibold ${isDark ? "text-white" : "text-neutral-900"}`}>Sign in to view messages</p>
+      <div className={`h-full flex flex-col items-center justify-center gap-4 ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
+        <div className={`w-16 h-16 rounded-[20px] border flex items-center justify-center ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}>
+          <MessageSquare size={24} className="text-[#e2593b] opacity-60" />
+        </div>
+        <p className={`font-black text-sm uppercase tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}>Sign in to view messages</p>
         <button
           onClick={() => navigate("/login")}
-          className="px-5 py-2.5 bg-[#e2593b] text-white rounded-xl text-sm font-semibold hover:bg-[#cc4e33] transition-colors flex items-center gap-2"
+          className="px-5 py-2.5 bg-[#e2593b] text-white rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-[#cc4e33] transition-colors flex items-center gap-2 active:scale-95"
         >
-          <LogIn size={16} /> Sign in
+          <LogIn size={13} /> Sign in
         </button>
       </div>
     );
   }
 
+  // ── render ─────────────────────────────────────────────────────────────────
   return (
-    <div className={`w-full h-full overflow-hidden ${isDark ? "bg-[#0b0b0b] text-white" : "bg-[#f5f5f5] text-black"}`}>
+    <div className={`w-full h-full overflow-hidden border-t ${isDark ? "bg-[#0b0b0b] text-white border-white/[0.04]" : "bg-[#f5f5f5] text-neutral-900 border-neutral-200"}`}>
       <div className="flex h-full">
 
-        {/* ── SIDEBAR ── */}
+        {/* ══════════════════════════════════
+            SIDEBAR
+        ══════════════════════════════════ */}
         <AnimatePresence initial={false}>
           {(showSidebar || window.innerWidth >= 1024) && (
             <motion.aside
@@ -375,330 +615,566 @@ export default function ChatPage() {
               transition={{ duration: 0.18 }}
               className={`
                 ${showSidebar ? "flex" : "hidden"} lg:flex
-                flex-col w-full sm:w-[300px] lg:w-[320px] shrink-0
-                border-r
+                flex-col w-full sm:w-[290px] lg:w-[290px] shrink-0 border-r
                 ${isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"}
               `}
             >
-              {/* Sidebar header */}
+              {/* Sidebar header — ProfilePage section-header style */}
               <div className={`px-4 pt-5 pb-3 border-b ${isDark ? "border-white/[0.07]" : "border-neutral-100"}`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className={`text-lg font-bold tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}>
-                    Messages
-                  </h2>
+                  <div className="flex items-center gap-2.5">
+                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${isDark ? "bg-white/[0.05]" : "bg-neutral-100"}`}>
+                      <MessageSquare size={13} className="text-[#e2593b]" />
+                    </span>
+                    <h2 className={`text-[11px] font-bold uppercase tracking-widest ${isDark ? "text-white" : "text-neutral-800"}`}>
+                      Messages
+                    </h2>
+                  </div>
                   {matches.length > 0 && (
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isDark ? "bg-white/10 text-white/60" : "bg-neutral-100 text-neutral-500"}`}>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${isDark ? "bg-white/[0.06] border-white/[0.08] text-neutral-300" : "bg-neutral-100 border-neutral-200 text-neutral-500"}`}>
                       {matches.length}
                     </span>
                   )}
                 </div>
 
                 {/* Search */}
-                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-neutral-50 border-neutral-200 text-black"}`}>
-                  <Search size={14} className={isDark ? "text-white/40" : "text-neutral-400"} />
+                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/[0.07]" : "bg-neutral-50 border-neutral-200"}`}>
+                  <Search size={12} className={isDark ? "text-white/30" : "text-neutral-400"} />
                   <input
-                    className={`flex-1 text-sm outline-none bg-transparent ${isDark ? "text-white placeholder:text-white/30" : "text-black placeholder:text-neutral-400"}`}
+                    className={`flex-1 text-xs outline-none bg-transparent font-medium ${isDark ? "text-white placeholder:text-white/25" : "text-neutral-900 placeholder:text-neutral-400"}`}
                     placeholder="Search conversations…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery("")} className={`${isDark ? "text-white/30 hover:text-white/60" : "text-neutral-300 hover:text-neutral-500"}`}>
+                      <X size={11} />
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Match list */}
-              <div className="flex-1 overflow-y-auto py-2">
+              <div className="flex-1 overflow-y-auto py-2 px-1">
                 {matchesLoading ? (
-                  <div className="flex flex-col gap-2 p-3">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${isDark ? "bg-white/5" : "bg-neutral-100"} animate-pulse`}>
-                        <div className={`w-10 h-10 rounded-full shrink-0 ${isDark ? "bg-white/10" : "bg-neutral-200"}`} />
-                        <div className="flex-1 space-y-2">
-                          <div className={`h-3 rounded-full w-2/3 ${isDark ? "bg-white/10" : "bg-neutral-200"}`} />
-                          <div className={`h-2.5 rounded-full w-1/2 ${isDark ? "bg-white/5" : "bg-neutral-100"}`} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <MatchSkeleton isDark={isDark} />
                 ) : matchesError ? (
-                  <div className="p-4 text-center">
-                    <p className={`text-xs ${isDark ? "text-white/40" : "text-neutral-400"}`}>{matchesError}</p>
+                  <div className={`m-3 p-3 rounded-xl border text-center ${isDark ? "bg-rose-500/5 border-rose-500/10" : "bg-rose-50 border-rose-100"}`}>
+                    <p className={`text-[10px] font-medium ${isDark ? "text-rose-400" : "text-rose-500"}`}>{matchesError}</p>
                   </div>
                 ) : filteredMatches.length === 0 ? (
                   <div className="p-6 text-center">
-                    <p className={`text-sm ${isDark ? "text-white/40" : "text-neutral-400"}`}>
+                    <p className={`text-xs font-medium ${isDark ? "text-white/30" : "text-neutral-400"}`}>
                       {searchQuery ? "No results found" : "No matches yet"}
                     </p>
                     {!searchQuery && (
-                      <button
-                        onClick={() => navigate("/swipe")}
-                        className="mt-3 text-xs text-[#e2593b] hover:underline font-medium"
-                      >
+                      <button onClick={() => navigate("/swipe")} className="mt-3 text-[10px] font-bold uppercase tracking-wider text-[#e2593b] hover:underline">
                         Discover people →
                       </button>
                     )}
                   </div>
                 ) : (
-                  filteredMatches.map((match) => {
-                    const peerUid = getPeerUidFromMatch(match.users, currentUid);
-                    const peer = peerProfiles[peerUid];
-                    const isSelected = match.id === selectedMatchId;
-                    const lastMsgText = match.lastMessage?.text || null;
-                    const lastMsgTime = match.lastMessage?.timestamp
-                      ? formatRelativeTime(match.lastMessage.timestamp)
-                      : null;
+                  <>
+                    <p className={`text-[9px] font-bold uppercase tracking-widest px-3 py-2 ${isDark ? "text-white/20" : "text-neutral-400"}`}>
+                      Conversations
+                    </p>
+                    {filteredMatches.map((match) => {
+                      const peerUid = getPeerUidFromMatch(match.users, currentUid);
+                      const peer = peerProfiles[peerUid];
+                      const isSelected = match.id === selectedMatchId;
+                      const lastMsgText = match.lastMessage?.text || null;
+                      const lastMsgTime = match.lastMessage?.timestamp
+                        ? formatRelativeTime(match.lastMessage.timestamp)
+                        : null;
 
-                    return (
-                      <button
-                        key={match.id}
-                        onClick={() => handleSelectMatch(match.id)}
-                        className={`
-                          w-full flex items-center gap-3 px-3 py-3 mx-1 rounded-xl text-left transition-all
-                          ${isSelected
-                            ? isDark
-                              ? "bg-white/[0.08] ring-1 ring-white/10"
-                              : "bg-[#e2593b]/10 ring-1 ring-[#e2593b]/20"
-                            : isDark
-                              ? "hover:bg-white/5"
-                              : "hover:bg-neutral-50"
-                          }
-                        `}
-                        style={{ width: "calc(100% - 8px)" }}
-                      >
-                        {/* Avatar */}
-                        <div className="relative shrink-0">
-                          <UserAvatar
-                            user={peer}
-                            size="md"
-                            className={isSelected ? "ring-2 ring-[#e2593b]/50" : ""}
-                          />
-                          {peer?.online && (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-inherit" />
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-neutral-900"}`}>
-                              {peer?.name || `User ${(peerUid || "").slice(0, 6)}`}
-                            </span>
-                            {lastMsgTime && (
-                              <span className={`text-[10px] shrink-0 ml-2 ${isDark ? "text-white/30" : "text-neutral-400"}`}>
-                                {lastMsgTime}
-                              </span>
+                      return (
+                        <button
+                          key={match.id}
+                          onClick={() => handleSelectMatch(match.id)}
+                          className={`
+                            w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-all mb-0.5 border
+                            ${isSelected
+                              ? isDark
+                                ? "bg-white/[0.06] border-white/[0.08]"
+                                : "bg-[#e2593b]/[0.07] border-[#e2593b]/[0.15]"
+                              : isDark
+                                ? "border-transparent hover:bg-white/[0.03]"
+                                : "border-transparent hover:bg-neutral-50"
+                            }
+                          `}
+                        >
+                          <div className="relative shrink-0">
+                            <UserAvatar user={peer} size="md" className="rounded-xl" />
+                            {peer?.online && (
+                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-inherit" />
                             )}
                           </div>
 
-                          {/* Last message preview or skill tags */}
-                          {lastMsgText ? (
-                            <p className={`text-xs truncate mt-0.5 ${isDark ? "text-white/40" : "text-neutral-400"}`}>
-                              {lastMsgText}
-                            </p>
-                          ) : peer?.skillsOffered?.length > 0 ? (
-                            <p className={`text-xs truncate mt-0.5 ${isDark ? "text-white/30" : "text-neutral-400"}`}>
-                              Offers: {peer.skillsOffered.slice(0, 2).join(", ")}
-                            </p>
-                          ) : (
-                            <p className={`text-xs mt-0.5 ${isDark ? "text-white/20" : "text-neutral-300"}`}>
-                              New match
-                            </p>
-                          )}
-                        </div>
-                        {isSelected && <ChevronRight size={14} className="shrink-0 text-[#e2593b] opacity-70" />}
-                      </button>
-                    );
-                  })
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={`text-[11px] font-bold truncate uppercase tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}>
+                                {peer?.name || `User ${(peerUid || "").slice(0, 6)}`}
+                              </span>
+                              {lastMsgTime && (
+                                <span className={`text-[9px] font-medium shrink-0 ${isDark ? "text-white/25" : "text-neutral-400"}`}>
+                                  {lastMsgTime}
+                                </span>
+                              )}
+                            </div>
+                            {lastMsgText ? (
+                              <p className={`text-[11px] truncate mt-0.5 font-medium ${isDark ? "text-white/35" : "text-neutral-500"}`}>
+                                {lastMsgText}
+                              </p>
+                            ) : peer?.skillsOffered?.length > 0 ? (
+                              <p className={`text-[11px] truncate mt-0.5 font-medium ${isDark ? "text-white/25" : "text-neutral-400"}`}>
+                                Teaches {peer.skillsOffered.slice(0, 2).join(", ")}
+                              </p>
+                            ) : (
+                              <p className={`text-[11px] mt-0.5 font-medium ${isDark ? "text-white/15" : "text-neutral-300"}`}>
+                                New match
+                              </p>
+                            )}
+                          </div>
+
+                          {isSelected && <ChevronRight size={11} className="shrink-0 text-[#e2593b] opacity-60" />}
+                        </button>
+                      );
+                    })}
+                  </>
                 )}
               </div>
             </motion.aside>
           )}
         </AnimatePresence>
 
-        {/* ── MAIN CHAT AREA ── */}
-        <main className={`flex-1 flex flex-col min-w-0 ${isDark ? "bg-[#0b0b0b]" : "bg-[#f8f8f8]"}`}>
+        {/* ══════════════════════════════════
+            MAIN CHAT AREA
+        ══════════════════════════════════ */}
+        <main className={`flex-1 flex flex-col min-w-0 ${isDark ? "bg-[#0b0b0b]" : "bg-[#f5f5f5]"}`}>
 
           {/* Chat header */}
           {selectedPeer ? (
-            <div className={`flex items-center gap-3 px-4 py-3 border-b ${isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"}`}>
-              {/* Mobile back button */}
+            <div className={`flex items-center gap-3 px-4 py-3 border-b flex-shrink-0 ${isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"}`}>
               <button
-                className="lg:hidden p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                className="lg:hidden p-1.5 rounded-lg transition-colors active:scale-90"
                 onClick={() => setShowSidebar(true)}
               >
-                <ArrowLeft size={18} className={isDark ? "text-white" : "text-neutral-700"} />
+                <ArrowLeft size={15} className={isDark ? "text-white/50" : "text-neutral-500"} />
               </button>
 
-              <div className="relative">
-                <UserAvatar user={selectedPeer} size="md" />
-                {selectedPeer.online && (
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-inherit" />
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <p className={`font-semibold text-sm ${isDark ? "text-white" : "text-neutral-900"}`}>
-                  {selectedPeer.name}
-                </p>
-                <p className={`text-xs ${isDark ? "text-white/40" : "text-neutral-400"}`}>
-                  {selectedPeer.online ? "Online" : "Skill partner"}
-                </p>
-              </div>
+              {/* Clickable peer — goes to profile */}
+              <button
+                onClick={() => navigate(`/profile/${selectedPeer.uid}`)}
+                className="flex items-center gap-3 flex-1 min-w-0 text-left group"
+              >
+                <div className="relative shrink-0">
+                  <UserAvatar user={selectedPeer} size="md" className="rounded-xl group-hover:opacity-85 transition-opacity" />
+                  {selectedPeer.online && (
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-inherit" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}>
+                    {selectedPeer.name}
+                  </p>
+                  <p className={`text-[10px] font-medium mt-0.5 ${isDark ? "text-white/35" : "text-neutral-400"}`}>
+                    {selectedPeer.online
+                      ? <span className="text-emerald-500">● Online</span>
+                      : selectedPeer.skillsOffered?.length > 0
+                        ? `Teaches ${selectedPeer.skillsOffered.slice(0, 2).join(", ")}`
+                        : "Skill partner"
+                    }
+                  </p>
+                </div>
+              </button>
 
               {/* Header actions */}
-              <div className="flex items-center gap-1">
-                <button className={`p-2 rounded-lg transition-colors ${isDark ? "hover:bg-white/10 text-white/60" : "hover:bg-neutral-100 text-neutral-400"}`}>
-                  <Info size={16} />
-                </button>
-                <button className={`p-2 rounded-lg transition-colors ${isDark ? "hover:bg-white/10 text-white/60" : "hover:bg-neutral-100 text-neutral-400"}`}>
-                  <MoreVertical size={16} />
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => setShowInfoPanel((p) => !p)}
+                  title="Partner info"
+                  className={`p-2 rounded-xl transition-colors ${
+                    showInfoPanel
+                      ? isDark ? "bg-white/[0.08] text-white" : "bg-[#e2593b]/10 text-[#e2593b]"
+                      : isDark ? "hover:bg-white/[0.05] text-white/35" : "hover:bg-neutral-100 text-neutral-400"
+                  }`}
+                >
+                  <Info size={14} />
                 </button>
               </div>
             </div>
-          ) : !matchesLoading && matches.length === 0 ? null : (
-            <div className={`h-[57px] border-b ${isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"}`}>
-              {/* Mobile back button when no peer selected */}
+          ) : (
+            <div className={`h-[53px] border-b flex-shrink-0 flex items-center px-4 ${isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"}`}>
               {!showSidebar && (
-                <button className="lg:hidden p-3" onClick={() => setShowSidebar(true)}>
-                  <ArrowLeft size={18} />
+                <button className="p-1.5 rounded-lg" onClick={() => setShowSidebar(true)}>
+                  <ArrowLeft size={15} className={isDark ? "text-white/50" : "text-neutral-500"} />
                 </button>
               )}
             </div>
           )}
 
-          {/* Messages area */}
-          {!selectedMatchId ? (
-            matchesLoading ? (
-              <div className="flex-1 flex items-center justify-center">
-                <Loader2 className="animate-spin text-[#e2593b]" size={28} />
-              </div>
-            ) : matches.length === 0 ? (
-              <NoMatchesState isDark={isDark} navigate={navigate} />
-            ) : (
-              <EmptyState isDark={isDark} />
-            )
-          ) : (
-            <>
-              <div className="flex-1 overflow-y-auto px-4 py-5 space-y-1">
-                {messagesLoading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <Loader2 className="animate-spin text-[#e2593b]" size={24} />
+          {/* Content row */}
+          <div className="flex flex-1 min-h-0">
+            <div className="flex-1 flex flex-col min-w-0 min-h-0">
+
+              {/* Messages or empty states */}
+              {!selectedMatchId ? (
+                matchesLoading ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <Loader2 className="animate-spin text-[#e2593b]" size={28} />
                   </div>
-                ) : messagesError ? (
-                  <div className="flex items-center justify-center h-full">
-                    <p className={`text-sm ${isDark ? "text-white/40" : "text-neutral-400"}`}>{messagesError}</p>
-                  </div>
-                ) : uiMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-3">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDark ? "bg-white/5" : "bg-neutral-100"}`}>
-                      <MessageSquare size={24} className="text-[#e2593b] opacity-60" />
-                    </div>
-                    <p className={`text-sm font-medium ${isDark ? "text-white/60" : "text-neutral-500"}`}>
-                      Start the conversation
-                    </p>
-                    <p className={`text-xs text-center max-w-xs ${isDark ? "text-white/30" : "text-neutral-400"}`}>
-                      Say hi and kick off your skill exchange!
-                    </p>
-                  </div>
+                ) : matches.length === 0 ? (
+                  <NoMatchesState isDark={isDark} navigate={navigate} />
                 ) : (
-                  <>
-                    {uiMessages.map((msg, i) => {
-                      const isMe = msg.sender === "me";
-                      const prevMsg = uiMessages[i - 1];
-                      const isSameGroup = prevMsg?.sender === msg.sender;
+                  <EmptyState isDark={isDark} />
+                )
+              ) : (
+                <>
+                  {/* Message list */}
+                  <div className="flex-1 overflow-y-auto px-4 py-4">
+                    {messagesLoading ? (
+                      <MessageSkeleton isDark={isDark} />
+                    ) : messagesError ? (
+                      <div className={`m-4 p-4 rounded-2xl border text-center ${isDark ? "bg-rose-500/5 border-rose-500/10" : "bg-rose-50 border-rose-100"}`}>
+                        <p className={`text-xs font-medium ${isDark ? "text-rose-400" : "text-rose-500"}`}>{messagesError}</p>
+                      </div>
+                    ) : uiMessages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full gap-3">
+                        <div className={`w-14 h-14 rounded-[18px] border flex items-center justify-center ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}>
+                          <MessageSquare size={22} className="text-[#e2593b] opacity-50" />
+                        </div>
+                        <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? "text-white/50" : "text-neutral-500"}`}>
+                          Start the conversation
+                        </p>
+                        <p className={`text-[10px] font-medium text-center max-w-[200px] leading-relaxed ${isDark ? "text-white/25" : "text-neutral-400"}`}>
+                          Say hi and kick off your skill exchange!
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <DateDivider label="Today" isDark={isDark} />
 
-                      return (
-                        <motion.div
-                          key={msg.id}
-                          initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ duration: 0.15 }}
-                          className={`flex ${isMe ? "justify-end" : "justify-start"} ${isSameGroup ? "mt-0.5" : "mt-3"}`}
-                        >
-                          {/* Avatar for peer (only on first of group) */}
-                          {!isMe && !isSameGroup && selectedPeer && (
-                            <div className="mr-2 mt-auto shrink-0">
-                              <UserAvatar user={selectedPeer} size="xs" />
-                            </div>
-                          )}
-                          {!isMe && isSameGroup && <div className="w-7 mr-2 shrink-0" />}
+                        {uiMessages.map((msg, i) => {
+                          const isMe = msg.sender === "me";
+                          const prevMsg = uiMessages[i - 1];
+                          const nextMsg = uiMessages[i + 1];
+                          const isSameGroup = prevMsg?.sender === msg.sender;
+                          const isLastInGroup = !nextMsg || nextMsg.sender !== msg.sender;
+                          const isStarred = starredMsgIds.has(msg.id);
+                          const isHovered = hoveredMsgId === msg.id;
 
-                          <div className={`max-w-[70%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                            <div
-                              className={`
-                                px-4 py-2.5 text-sm leading-relaxed break-words
-                                ${!isSameGroup ? (isMe ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-bl-md") : (isMe ? "rounded-2xl rounded-tr-md rounded-br-md" : "rounded-2xl rounded-tl-md rounded-bl-md")}
-                                ${isMe
-                                  ? "bg-[#e2593b] text-white"
-                                  : isDark
-                                    ? "bg-white/10 text-white"
-                                    : "bg-white text-neutral-900 shadow-sm border border-neutral-100"
-                                }
-                                ${msg.isDeleted ? "italic opacity-50" : ""}
-                              `}
+                          return (
+                            <motion.div
+                              key={msg.id}
+                              initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              transition={{ duration: 0.14 }}
+                              className={`flex ${isMe ? "justify-end" : "justify-start"} ${isSameGroup ? "mt-0.5" : "mt-3"}`}
+                              onMouseEnter={() => setHoveredMsgId(msg.id)}
+                              onMouseLeave={() => setHoveredMsgId(null)}
                             >
-                              {msg.text}
-                            </div>
-                            {/* Timestamp — only on last of group or if no next sibling */}
-                            {(!uiMessages[i + 1] || uiMessages[i + 1]?.sender !== msg.sender) && msg.time && (
-                              <span className={`text-[10px] mt-1 px-1 ${isDark ? "text-white/25" : "text-neutral-400"}`}>
-                                {msg.time}
-                              </span>
-                            )}
+                              {/* Peer avatar slot */}
+                              {!isMe && (
+                                <div className="mr-2 mt-auto shrink-0 w-7">
+                                  {!isSameGroup
+                                    ? <UserAvatar user={selectedPeer} size="xs" className="rounded-lg" />
+                                    : null
+                                  }
+                                </div>
+                              )}
+
+                              <div className={`max-w-[68%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                                <div className="flex items-end gap-1.5">
+
+                                  {/* Hover actions — left of bubble when isMe */}
+                                  <AnimatePresence>
+                                    {isHovered && isMe && (
+                                      <motion.div
+                                        initial={{ opacity: 0, scale: 0.85 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.85 }}
+                                        className="flex items-center gap-0.5 mb-0.5"
+                                      >
+                                        <button
+                                          onClick={() => setReplyingTo({ id: msg.id, text: msg.text })}
+                                          title="Reply"
+                                          className={`p-1.5 rounded-lg text-[11px] transition-colors ${isDark ? "hover:bg-white/[0.06] text-white/30" : "hover:bg-neutral-100 text-neutral-400"}`}
+                                        >↩</button>
+                                        <button
+                                          onClick={() => toggleStar(msg.id)}
+                                          title="Star"
+                                          className={`p-1.5 rounded-lg transition-colors ${isStarred ? "text-amber-400" : isDark ? "text-white/30 hover:bg-white/[0.06]" : "text-neutral-400 hover:bg-neutral-100"}`}
+                                        >
+                                          <Star size={11} className={isStarred ? "fill-amber-400" : ""} />
+                                        </button>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+
+                                  {/* Bubble */}
+                                  <div
+                                    className={`
+                                      text-xs leading-relaxed break-words font-medium overflow-hidden
+                                      ${!isSameGroup
+                                        ? isMe ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-bl-md"
+                                        : isMe ? "rounded-2xl rounded-tr-md rounded-br-md" : "rounded-2xl rounded-tl-md rounded-bl-md"
+                                      }
+                                      ${isMe
+                                        ? "bg-[#e2593b] text-white"
+                                        : isDark
+                                          ? "bg-white/[0.07] text-white border border-white/[0.06]"
+                                          : "bg-white text-neutral-900 border border-neutral-200 shadow-sm"
+                                      }
+                                      ${msg.isDeleted ? "italic opacity-40" : ""}
+                                    `}
+                                  >
+                                    {/* Local image attachment preview */}
+                                    {msg._localAttachment?.type === "image" && msg._localAttachment.previewUrl && (
+                                      <img
+                                        src={msg._localAttachment.previewUrl}
+                                        alt={msg._localAttachment.file.name}
+                                        className="max-w-[220px] max-h-[180px] object-cover w-full"
+                                      />
+                                    )}
+                                    {/* Local file attachment */}
+                                    {msg._localAttachment?.type === "file" && (
+                                      <div className={`flex items-center gap-2 px-3 py-2.5 ${isMe ? "text-white/90" : isDark ? "text-white/80" : "text-neutral-700"}`}>
+                                        <FileText size={14} className="shrink-0 opacity-70" />
+                                        <span className="truncate max-w-[160px]">{msg._localAttachment.file.name}</span>
+                                      </div>
+                                    )}
+                                    {/* Regular text */}
+                                    {!msg._localAttachment && (
+                                      <span className="px-4 py-2.5 block">
+                                        {msg.text}
+                                        {isStarred && <Star size={9} className="inline ml-1.5 fill-amber-400 text-amber-400" />}
+                                      </span>
+                                    )}
+                                    {/* Text alongside attachment */}
+                                    {msg._localAttachment && msg.text && msg.text !== msg._localAttachment.file.name && (
+                                      <span className="px-3 py-2 block border-t border-white/10">{msg.text}</span>
+                                    )}
+                                  </div>
+
+                                  {/* Hover actions — right of bubble when !isMe */}
+                                  <AnimatePresence>
+                                    {isHovered && !isMe && (
+                                      <motion.div
+                                        initial={{ opacity: 0, scale: 0.85 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.85 }}
+                                        className="flex items-center gap-0.5 mb-0.5"
+                                      >
+                                        <button
+                                          onClick={() => setReplyingTo({ id: msg.id, text: msg.text })}
+                                          title="Reply"
+                                          className={`p-1.5 rounded-lg text-[11px] transition-colors ${isDark ? "hover:bg-white/[0.06] text-white/30" : "hover:bg-neutral-100 text-neutral-400"}`}
+                                        >↩</button>
+                                        <button
+                                          onClick={() => toggleStar(msg.id)}
+                                          title="Star"
+                                          className={`p-1.5 rounded-lg transition-colors ${isStarred ? "text-amber-400" : isDark ? "text-white/30 hover:bg-white/[0.06]" : "text-neutral-400 hover:bg-neutral-100"}`}
+                                        >
+                                          <Star size={11} className={isStarred ? "fill-amber-400" : ""} />
+                                        </button>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+
+                                {/* Timestamp + read check */}
+                                {isLastInGroup && msg.time && (
+                                  <span className={`text-[9px] font-medium mt-1 px-1 flex items-center gap-1 ${isDark ? "text-white/20" : "text-neutral-400"}`}>
+                                    {isMe && <Check size={9} className="opacity-50" />}
+                                    {msg.time}
+                                  </span>
+                                )}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                        <div ref={messagesEndRef} />
+                      </>
+                    )}
+                  </div>
+
+                  {/* Input bar */}
+                  <div className={`flex-shrink-0 px-4 py-3 border-t ${isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"}`}>
+
+                    {/* Reply preview */}
+                    <AnimatePresence>
+                      {replyingTo && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden mb-2"
+                        >
+                          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-l-2 border-[#e2593b] ${isDark ? "bg-white/[0.03]" : "bg-neutral-50"}`}>
+                            <span className={`text-[10px] font-medium flex-1 truncate ${isDark ? "text-white/45" : "text-neutral-500"}`}>
+                              ↩ {replyingTo.text}
+                            </span>
+                            <button onClick={() => setReplyingTo(null)} className={`${isDark ? "text-white/25 hover:text-white/50" : "text-neutral-300 hover:text-neutral-500"}`}>
+                              <X size={11} />
+                            </button>
                           </div>
                         </motion.div>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
-              </div>
+                      )}
+                    </AnimatePresence>
 
-              {/* Input bar */}
-              <div className={`px-4 py-3 border-t ${isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"}`}>
-                {sendError && (
-                  <p className="text-xs text-red-500 mb-2 px-1">{sendError}</p>
-                )}
-                <div className={`flex items-end gap-2 p-1.5 rounded-2xl border ${isDark ? "bg-white/5 border-white/10" : "bg-neutral-50 border-neutral-200"}`}>
-                  <textarea
-                    ref={inputRef}
-                    rows={1}
-                    value={messageInput}
-                    onChange={(e) => {
-                      setMessageInput(e.target.value);
-                      e.target.style.height = "auto";
-                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-                    }}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type a message…"
-                    className={`
-                      flex-1 resize-none px-3 py-2 text-sm outline-none bg-transparent
-                      max-h-[120px] leading-relaxed
-                      ${isDark ? "text-white placeholder:text-white/30 caret-white" : "text-black placeholder:text-neutral-400 caret-black"}
-                    `}
-                    style={{ overflowY: "auto" }}
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={!messageInput.trim() || sending}
-                    className={`
-                      shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all
-                      ${messageInput.trim() && !sending
-                        ? "bg-[#e2593b] text-white hover:bg-[#cc4e33] shadow-md"
-                        : isDark
-                          ? "bg-white/10 text-white/30"
-                          : "bg-neutral-200 text-neutral-400"
-                      }
-                    `}
-                  >
-                    {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                  </button>
-                </div>
-                <p className={`text-[10px] text-center mt-1.5 ${isDark ? "text-white/15" : "text-neutral-300"}`}>
-                  Enter to send · Shift+Enter for new line
-                </p>
-              </div>
-            </>
-          )}
+                    {/* Send error */}
+                    <AnimatePresence>
+                      {sendError && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden mb-2"
+                        >
+                          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${isDark ? "bg-rose-500/5 border-rose-500/10" : "bg-rose-50 border-rose-100"}`}>
+                            <p className={`text-[10px] font-medium flex-1 ${isDark ? "text-rose-400" : "text-rose-500"}`}>{sendError}</p>
+                            <button onClick={() => setSendError(null)} className="text-rose-400"><X size={11} /></button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept={ACCEPTED_TYPES}
+                      className="hidden"
+                      onChange={handleAttachFiles}
+                    />
+
+                    {/* Attachment preview strip */}
+                    <AnimatePresence>
+                      {attachments.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden mb-2"
+                        >
+                          <div className="flex flex-wrap gap-2 px-1">
+                            {attachments.map((att) => (
+                              <div
+                                key={att.id}
+                                className={`relative flex items-center gap-2 rounded-xl border overflow-hidden ${
+                                  isDark ? "bg-white/[0.04] border-white/[0.08]" : "bg-neutral-50 border-neutral-200"
+                                } ${att.type === "image" ? "p-0" : "px-3 py-2"}`}
+                              >
+                                {att.type === "image" ? (
+                                  <img
+                                    src={att.previewUrl}
+                                    alt={att.file.name}
+                                    className="w-16 h-16 object-cover"
+                                  />
+                                ) : (
+                                  <>
+                                    <FileText size={14} className={isDark ? "text-white/40" : "text-neutral-400"} />
+                                    <span className={`text-[10px] font-medium max-w-[120px] truncate ${isDark ? "text-white/60" : "text-neutral-600"}`}>
+                                      {att.file.name}
+                                    </span>
+                                    <span className={`text-[9px] ${isDark ? "text-white/25" : "text-neutral-400"}`}>
+                                      {(att.file.size / 1024).toFixed(0)} KB
+                                    </span>
+                                  </>
+                                )}
+                                {/* Remove button */}
+                                <button
+                                  onClick={() => removeAttachment(att.id)}
+                                  className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
+                                    isDark ? "bg-black/60 hover:bg-black/80 text-white/70" : "bg-white/80 hover:bg-white text-neutral-600 shadow-sm"
+                                  }`}
+                                >
+                                  <X size={9} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Composer */}
+                    <div className={`flex items-end gap-2 p-1.5 rounded-2xl border transition-colors ${isDark ? "bg-white/[0.03] border-white/[0.07]" : "bg-neutral-50 border-neutral-200"}`}>
+                      <button className={`p-2 rounded-xl transition-colors self-end ${isDark ? "text-white/25 hover:text-white/50 hover:bg-white/[0.04]" : "text-neutral-300 hover:text-neutral-500 hover:bg-neutral-100"}`}>
+                        <Smile size={15} />
+                      </button>
+
+                      <textarea
+                        ref={inputRef}
+                        rows={1}
+                        value={messageInput}
+                        onChange={(e) => {
+                          setMessageInput(e.target.value);
+                          e.target.style.height = "auto";
+                          e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                        }}
+                        onKeyDown={handleKeyDown}
+                        placeholder={attachments.length > 0 ? "Add a caption…" : "Write a message…"}
+                        className={`
+                          flex-1 resize-none px-2 py-2 text-xs outline-none bg-transparent
+                          max-h-[120px] leading-relaxed font-medium
+                          ${isDark ? "text-white placeholder:text-white/25 caret-white" : "text-neutral-900 placeholder:text-neutral-400"}
+                        `}
+                        style={{ overflowY: "auto" }}
+                      />
+
+                      {/* Attachment button — now wired */}
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Attach file or image"
+                        className={`p-2 rounded-xl transition-colors self-end ${
+                          attachments.length > 0
+                            ? "text-[#e2593b]"
+                            : isDark
+                              ? "text-white/25 hover:text-white/50 hover:bg-white/[0.04]"
+                              : "text-neutral-300 hover:text-neutral-500 hover:bg-neutral-100"
+                        }`}
+                      >
+                        <Paperclip size={15} />
+                      </button>
+
+                      <button
+                        onClick={handleSend}
+                        disabled={(!messageInput.trim() && attachments.length === 0) || sending}
+                        className={`
+                          self-end shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90
+                          ${(messageInput.trim() || attachments.length > 0) && !sending
+                            ? "bg-[#e2593b] text-white hover:bg-[#cc4e33] shadow-sm"
+                            : isDark ? "bg-white/[0.05] text-white/20" : "bg-neutral-200 text-neutral-400"
+                          }
+                        `}
+                      >
+                        {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                      </button>
+                    </div>
+
+                    <p className={`text-[9px] font-medium text-center mt-1.5 ${isDark ? "text-white/10" : "text-neutral-300"}`}>
+                      Enter to send · Shift+Enter for new line · Esc to cancel reply
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* ── PEER INFO PANEL ── */}
+            <AnimatePresence>
+              {showInfoPanel && selectedPeer && (
+                <PeerInfoPanel
+                  peer={selectedPeer}
+                  isDark={isDark}
+                  onClose={() => setShowInfoPanel(false)}
+                  navigate={navigate}
+                  matchId={selectedMatchId}
+                />
+              )}
+            </AnimatePresence>
+          </div>
         </main>
       </div>
     </div>

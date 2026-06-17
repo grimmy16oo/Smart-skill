@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 
-const getJwtSecret = () => process.env.JWT_SECRET || "dev-secret-change-me";
+const getJwtSecret = () =>
+  process.env.JWT_SECRET || "dev-secret-change-me";
 
-export const protect = async (req, res, next) => {
+export const protect = (req, res, next) => {
   try {
     let token;
 
@@ -11,14 +12,21 @@ export const protect = async (req, res, next) => {
     }
 
     if (!token) {
-      return res.status(401).json({ message: "Not authorized to access this route" });
+      return res
+        .status(401)
+        .json({ message: "Not authorized to access this route" });
     }
 
     const decoded = jwt.verify(token, getJwtSecret());
+
     req.userId = decoded.id;
+    req.user = { _id: decoded.id };
+
     next();
   } catch {
-    return res.status(401).json({ message: "Not authorized to access this route" });
+    return res
+      .status(401)
+      .json({ message: "Not authorized to access this route" });
   }
 };
 

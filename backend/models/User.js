@@ -3,6 +3,34 @@ import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
+    availability: {
+  recurring: [
+    {
+      dayOfWeek: Number,
+      startTime: String,
+      endTime: String,
+    },
+  ],
+  timezone: {
+    type: String,
+    default: "Asia/Dhaka",
+  },
+},
+
+notifPrefs: {
+  email: {
+    type: Boolean,
+    default: true,
+  },
+  browser: {
+    type: Boolean,
+    default: false,
+  },
+  inApp: {
+    type: Boolean,
+    default: true,
+  },
+},
     name: {
       type: String,
       required: [true, "Please provide a name"],
