@@ -19,7 +19,6 @@ import {
   Save,
   Star,
   TrendingUp,
-  Upload,
   Users,
   X,
   Sparkles,
@@ -227,8 +226,6 @@ export default function ProfilePage() {
   const [activityCount, setActivityCount] = useState(0);
   const [notifPrefs, setNotifPrefs] = useState({ email: true, browser: false, inApp: true });
   const [savingNotif, setSavingNotif] = useState(false);
-  const [showNotifPanel, setShowNotifPanel] = useState(false);
-
   const isOwnProfile = !id || id === user?.uid;
 
   const displayProfile = useMemo(() => {

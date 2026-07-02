@@ -60,10 +60,14 @@ function Input({
   showToggle = false,
   showPassword,
   onTogglePassword,
+  maxLength,
+  autoComplete,
 }) {
+  const inputId = `auth-${placeholder.toLowerCase().replace(/\s+/g, "-")}`;
+
   return (
     <div className="form-control w-full space-y-1.5">
-      <label className="label py-0 pl-0">
+      <label className="label py-0 pl-0" htmlFor={inputId}>
         <span className="text-xs font-semibold tracking-wide text-base-content/80 flex items-center gap-1.5">
           {icon}
           {placeholder}
@@ -73,9 +77,13 @@ function Input({
 
       <div className="relative">
         <input
+  id={inputId}
   type={showToggle && showPassword ? "text" : type}
   value={value}
   onChange={(e) => setValue(e.target.value)}
+  maxLength={maxLength}
+  autoComplete={autoComplete}
+  aria-invalid={Boolean(error)}
   placeholder={`Enter your ${placeholder.toLowerCase()}`}
   className={`input w-full bg-base-200/50 dark:bg-[#121212] border text-sm text-base-content dark:text-white placeholder:text-neutral-400 dark:placeholder:text-white/30 transition-all duration-200 focus:outline-none rounded-lg h-11 ${
     error 
@@ -117,9 +125,11 @@ function Input({
 
 /* CUSTOM THEME-AWARE TEXTAREA */
 function Textarea({ icon, value, setValue, placeholder, error, required }) {
+  const inputId = `auth-${placeholder.toLowerCase().replace(/\s+/g, "-")}`;
+
   return (
     <div className="form-control w-full space-y-1.5">
-      <label className="label py-0 pl-0">
+      <label className="label py-0 pl-0" htmlFor={inputId}>
         <span className="text-xs font-semibold tracking-wide text-base-content/80 flex items-center gap-1.5">
           {icon}
           {placeholder}
@@ -128,8 +138,11 @@ function Textarea({ icon, value, setValue, placeholder, error, required }) {
       </label>
 
       <textarea
+  id={inputId}
   value={value}
   onChange={(e) => setValue(e.target.value)}
+  maxLength={500}
+  aria-invalid={Boolean(error)}
   placeholder={`Tell us a little bit about yourself...`}
   className={`textarea w-full bg-base-200/50 dark:bg-[#121212] border text-sm text-base-content dark:text-white placeholder:text-neutral-400 dark:placeholder:text-white/30 transition-all duration-200 focus:outline-none rounded-lg resize-none p-3 line-clamp-3 ${
     error 
@@ -156,7 +169,7 @@ function Textarea({ icon, value, setValue, placeholder, error, required }) {
 }
 
 export default function LoginPage() {
-  const { user, register, login } = useAuth();
+  const { user, register, login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -173,6 +186,7 @@ export default function LoginPage() {
 
   // HANDLING STATUS STATES
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -274,6 +288,34 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setErrors({});
+    setSuccessMessage("");
+    setGoogleLoading(true);
+
+    try {
+      await loginWithGoogle();
+      setSuccessMessage("Signed in with Google!");
+      setTimeout(() => navigate("/swipe"), 500);
+    } catch (err) {
+      console.error("Google auth error:", err);
+
+      let errorMessage = err.message || "Google sign-in failed. Please try again.";
+
+      if (err.code === "auth/popup-closed-by-user") {
+        errorMessage = "Google sign-in was cancelled.";
+      } else if (err.code === "auth/popup-blocked") {
+        errorMessage = "Your browser blocked the Google sign-in popup.";
+      } else if (err.code === "auth/account-exists-with-different-credential") {
+        errorMessage = "An account already exists with this email.";
+      }
+
+      setErrors({ general: errorMessage });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-black text-base-content dark:text-white flex font-sans antialiased overflow-x-hidden transition-colors duration-200">
       
@@ -336,7 +378,7 @@ export default function LoginPage() {
                 className="alert alert-error bg-error/10 border-error/20 text-error text-xs py-3.5 px-4 rounded-lg flex items-start gap-2.5"
               >
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span className="text-white">{errors.general}</span>
+                <span>{errors.general}</span>
               </motion.div>
             )}
 
@@ -348,10 +390,32 @@ export default function LoginPage() {
                 className="alert alert-success bg-success/10 border-success/20 text-success text-xs py-3.5 px-4 rounded-lg flex items-start gap-2.5"
               >
                 <CheckCircle size={16} className="shrink-0 mt-0.5" />
-                <span className="text-white">{successMessage}</span>
+                <span>{successMessage}</span>
               </motion.div>
             )}
           </AnimatePresence>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loading || googleLoading}
+            className="w-full border border-base-300 dark:border-neutral bg-white dark:bg-[#121212] text-base-content dark:text-white hover:bg-base-200/60 dark:hover:bg-white/5 disabled:opacity-60 disabled:cursor-not-allowed font-semibold transition-all duration-200 rounded-lg text-sm h-11 flex items-center justify-center gap-3"
+          >
+            {googleLoading ? (
+              <Loader size={16} className="animate-spin" />
+            ) : (
+              <span className="grid place-items-center w-5 h-5 rounded-full bg-white text-[15px] font-bold text-[#4285F4] border border-base-300">
+                G
+              </span>
+            )}
+            <span>{googleLoading ? "Connecting..." : "Continue with Google"}</span>
+          </button>
+
+          <div className="flex items-center gap-3 text-xs font-medium text-base-content/40">
+            <span className="h-px flex-1 bg-base-300 dark:bg-neutral" />
+            <span>or</span>
+            <span className="h-px flex-1 bg-base-300 dark:bg-neutral" />
+          </div>
 
           {/* Main Action Form Wrapper */}
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -371,6 +435,8 @@ export default function LoginPage() {
                     setValue={setName}
                     placeholder="Full Name"
                     error={errors.name}
+                    maxLength={80}
+                    autoComplete="name"
                     required
                   />
 
@@ -379,6 +445,8 @@ export default function LoginPage() {
                     value={location}
                     setValue={setLocation}
                     placeholder="Location"
+                    maxLength={80}
+                    autoComplete="address-level2"
                   />
 
                   <div className="relative">
@@ -405,6 +473,7 @@ export default function LoginPage() {
               placeholder="Email"
               type="email"
               error={errors.email}
+              autoComplete="email"
               required
             />
 
@@ -416,6 +485,7 @@ export default function LoginPage() {
                 placeholder="Password"
                 type="password"
                 error={errors.password}
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 required
                 showToggle
                 showPassword={showPassword}
@@ -440,6 +510,7 @@ export default function LoginPage() {
                     placeholder="Confirm Password"
                     type="password"
                     error={errors.confirmPassword}
+                    autoComplete="new-password"
                     required
                     showToggle
                     showPassword={showConfirmPassword}
@@ -452,7 +523,7 @@ export default function LoginPage() {
             {/* Core Submit Button Trigger */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90 disabled:bg-neutral/50 disabled:text-base-content/40 font-bold transition-all duration-200 rounded-lg text-sm h-11 flex items-center justify-center gap-2 mt-8 cursor-pointer"
             >
               {loading ? (

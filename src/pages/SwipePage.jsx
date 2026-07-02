@@ -1,7 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Zap, LogIn, Loader2, MessageCircle, Sparkles, MapPin } from "lucide-react";
+import {
+  Check,
+  RotateCcw,
+  SlidersHorizontal,
+  X,
+  Zap,
+  LogIn,
+  Loader2,
+  MessageCircle,
+  Sparkles,
+  MapPin,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { getUsersForSwipe, getUserProfile } from "../services/userService";
@@ -15,6 +26,34 @@ import {
 } from "../services/matchService";
 import SwipeCard from "../components/SwipeCard";
 import UserAvatar from "../components/UserAvatar";
+
+const categoryKeywords = {
+  Design: ["design", "figma", "ui", "ux", "brand", "illustration", "photoshop"],
+  Development: ["react", "node", "javascript", "python", "java", "web", "api", "database", "rust"],
+  Business: ["marketing", "sales", "finance", "startup", "strategy", "writing", "seo"],
+  Creative: ["music", "photo", "video", "art", "drawing", "animation", "content"],
+  Language: ["english", "spanish", "french", "german", "bangla", "arabic", "language"],
+};
+
+function getSkillCategory(skill = "") {
+  const normalized = skill.toLowerCase();
+  const hit = Object.entries(categoryKeywords).find(([, keywords]) =>
+    keywords.some((keyword) => normalized.includes(keyword))
+  );
+  return hit?.[0] || "General";
+}
+
+function getExperienceLevel(member) {
+  if (member.experienceLevel) return member.experienceLevel;
+  const skillCount = (member.skillsOffered?.length || 0) + (member.skillsWanted?.length || 0);
+  if (member.reviewCount >= 5 || member.rating >= 4.5 || skillCount >= 8) return "Advanced";
+  if (member.reviewCount >= 2 || skillCount >= 4) return "Intermediate";
+  return "Beginner";
+}
+
+function hasAvailability(member) {
+  return Boolean(member.availability?.recurring?.length || member.availability?.length);
+}
 
 export default function SwipePage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -30,6 +69,61 @@ export default function SwipePage() {
   const [matchProfiles, setMatchProfiles] = useState({});
   const [toast, setToast] = useState(null);
   const [swiping, setSwiping] = useState(false);
+  const [filters, setFilters] = useState({
+    query: "",
+    category: "All",
+    level: "All",
+    availability: "All",
+    sort: "Best match",
+  });
+
+  const categoryOptions = useMemo(() => {
+    const categories = new Set();
+    users.forEach((member) => {
+      [...(member.skillsOffered || []), ...(member.skillsWanted || [])].forEach((skill) => {
+        categories.add(getSkillCategory(skill));
+      });
+    });
+    return ["All", ...Array.from(categories).sort()];
+  }, [users]);
+
+  const deckUsers = useMemo(() => {
+    const query = filters.query.trim().toLowerCase();
+    const filtered = users.filter((member) => {
+      const allSkills = [...(member.skillsOffered || []), ...(member.skillsWanted || [])];
+      const searchable = [member.name, member.location, member.bio, ...allSkills]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      const memberCategories = new Set(allSkills.map(getSkillCategory));
+      const level = getExperienceLevel(member);
+
+      if (query && !searchable.includes(query)) return false;
+      if (filters.category !== "All" && !memberCategories.has(filters.category)) return false;
+      if (filters.level !== "All" && level !== filters.level) return false;
+      if (filters.availability === "Available" && !hasAvailability(member)) return false;
+      return true;
+    });
+
+    return filtered.sort((a, b) => {
+      if (filters.sort === "Newest") return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      if (filters.sort === "Most active") {
+        return (b.reviewCount || 0) + (b.matchCount || 0) - ((a.reviewCount || 0) + (a.matchCount || 0));
+      }
+      if (filters.sort === "Alphabetical") return (a.name || "").localeCompare(b.name || "");
+      return (b.matchPercent || 0) - (a.matchPercent || 0);
+    });
+  }, [users, filters]);
+
+  const filterSummary = useMemo(() => {
+    const active = Object.entries(filters).filter(([key, value]) => {
+      if (key === "query") return value.trim();
+      if (key === "sort") return value !== "Best match";
+      return value !== "All";
+    }).length;
+
+    return active ? `${active} filter${active === 1 ? "" : "s"} active` : "Smart match order";
+  }, [filters]);
 
   const showToast = (type, name, extra) => {
     setToast({ type, name, extra });
@@ -85,13 +179,13 @@ export default function SwipePage() {
   }, [user?.uid]);
 
   const handleSwipe = async (dir) => {
-    if (!users.length || swiping || !user?.uid) return;
+    if (!deckUsers.length || swiping || !user?.uid) return;
 
-    const current = users[0];
+    const current = deckUsers[0];
     setSwiping(true);
 
     setHistory((p) => [{ user: current, action: dir }, ...p]);
-    setUsers((p) => p.slice(1));
+    setUsers((p) => p.filter((member) => member.uid !== current.uid));
 
     try {
       if (dir === "like") {
@@ -193,9 +287,92 @@ export default function SwipePage() {
               {usersLoading
                 ? "Loading skill profiles..."
                 : deckMeta
-                  ? `${users.length} available | ${deckMeta.otherUsersCount} member${deckMeta.otherUsersCount === 1 ? "" : "s"} total`
-                  : `${users.length} profiles ready`}
+                  ? `${deckUsers.length} shown | ${deckMeta.otherUsersCount} member${deckMeta.otherUsersCount === 1 ? "" : "s"} total`
+                  : `${deckUsers.length} profiles ready`}
             </span>
+          </div>
+        </div>
+
+        <div className={`mb-10 rounded-2xl border p-4 lg:p-5 ${
+          isDark
+            ? "border-white/[0.06] bg-white/[0.02]"
+            : "border-neutral-200 bg-white shadow-sm"
+        }`}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#e2593b]/10 text-[#e2593b]">
+                <SlidersHorizontal size={15} />
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest">Search and filters</p>
+                <p className={`text-[11px] font-medium ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+                  {filterSummary}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFilters({ query: "", category: "All", level: "All", availability: "All", sort: "Best match" })}
+              className={`rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                isDark ? "text-neutral-400 hover:bg-white/[0.05] hover:text-white" : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+              }`}
+            >
+              Reset
+            </button>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <input
+              value={filters.query}
+              onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))}
+              placeholder="Search skill, name, location"
+              className={`field-shell h-11 px-3 text-sm xl:col-span-2 ${
+                isDark ? "bg-black/30 text-white" : "bg-white text-neutral-900"
+              }`}
+            />
+
+            <select
+              value={filters.category}
+              onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}
+              className={`field-shell h-11 px-3 text-sm ${isDark ? "bg-black/30 text-white" : "bg-white text-neutral-900"}`}
+            >
+              {categoryOptions.map((category) => (
+                <option key={category}>{category}</option>
+              ))}
+            </select>
+
+            <select
+              value={filters.level}
+              onChange={(event) => setFilters((current) => ({ ...current, level: event.target.value }))}
+              className={`field-shell h-11 px-3 text-sm ${isDark ? "bg-black/30 text-white" : "bg-white text-neutral-900"}`}
+            >
+              {["All", "Beginner", "Intermediate", "Advanced"].map((level) => (
+                <option key={level}>{level}</option>
+              ))}
+            </select>
+
+            <div className="grid grid-cols-2 gap-3 md:col-span-2 xl:col-span-1">
+              <select
+                value={filters.availability}
+                onChange={(event) => setFilters((current) => ({ ...current, availability: event.target.value }))}
+                className={`field-shell h-11 px-3 text-sm ${isDark ? "bg-black/30 text-white" : "bg-white text-neutral-900"}`}
+              >
+                {["All", "Available"].map((availability) => (
+                  <option key={availability}>{availability}</option>
+                ))}
+              </select>
+
+              <select
+                value={filters.sort}
+                onChange={(event) => setFilters((current) => ({ ...current, sort: event.target.value }))}
+                className={`field-shell h-11 px-3 text-sm ${isDark ? "bg-black/30 text-white" : "bg-white text-neutral-900"}`}
+              >
+                {["Best match", "Newest", "Most active", "Alphabetical"].map((sort) => (
+                  <option key={sort}>{sort}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -210,7 +387,7 @@ export default function SwipePage() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Loader2 className="animate-spin text-[#e2593b]" size={32} />
                   </div>
-                ) : users.length === 0 ? (
+                ) : deckUsers.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -227,7 +404,9 @@ export default function SwipePage() {
                         ? "Could not load profiles"
                         : deckMeta?.otherUsersCount === 0
                           ? "No other members yet"
-                          : "You reached the end"}
+                          : users.length === 0
+                            ? "You reached the end"
+                            : "No profiles match your filters"}
                     </h2>
                     <p className={`text-xs font-medium leading-relaxed mb-6 max-w-[260px] ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
                       {loadError ? (
@@ -235,6 +414,10 @@ export default function SwipePage() {
                       ) : deckMeta?.otherUsersCount === 0 ? (
                         <>
                           Create another account in a private window to test matching, or invite a friend to join.
+                        </>
+                      ) : users.length > 0 ? (
+                        <>
+                          Try a broader skill, category, experience level, or availability filter.
                         </>
                       ) : (
                         <>
@@ -253,7 +436,7 @@ export default function SwipePage() {
                     </button>
                   </motion.div>
                 ) : (
-                  [...users]
+                  [...deckUsers]
                     .slice(0, 3)
                     .reverse()
                     .map((swipeUser, i, arr) => {
@@ -286,17 +469,18 @@ export default function SwipePage() {
             {/* ACTION TRIGGERS MATRIX PANEL */}
             <div className="flex items-center gap-4 mt-8 w-full max-w-[380px] justify-center">
               <button
-                onClick={() => handleSwipe("skip")}
-                disabled={!users.length || swiping}
-                className={`w-20 h-12 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
-                  isDark 
-                    ? "border-white/[0.08] bg-white/[0.02] text-red-400 hover:bg-red-500/10 hover:border-red-500/30" 
-                    : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-red-500 hover:bg-red-500/5 hover:border-red-500/20 shadow-sm"
-                }`}
-                title="Pass"
-              >
-                Reject
-              </button>
+  onClick={() => handleSwipe("skip")}
+  disabled={!deckUsers.length || swiping}
+  className={`px-6 h-12 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 font-semibold ${
+    isDark
+      ? "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white"
+      : "border-red-300 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white"
+  }`}
+  title="Reject"
+  aria-label="Reject this profile"
+>
+  Reject
+</button>
 
               <button
                 onClick={handleUndo}
@@ -313,15 +497,16 @@ export default function SwipePage() {
 
               <button
                 onClick={() => handleSwipe("like")}
-                disabled={!users.length || swiping}
+                disabled={!deckUsers.length || swiping}
                 className={`w-20 h-12 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
                   isDark 
                     ? "border-white/[0.08] bg-white/[0.02] text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30" 
                     : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/20 shadow-sm"
                 }`}
                 title="Like"
+                aria-label="Like this profile"
               >
-                Accept
+                <Check size={20} />
               </button>
             </div>
           </div>

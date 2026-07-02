@@ -20,8 +20,9 @@ const reviewSchema = new mongoose.Schema(
     },
     text: {
       type: String,
-      default: "",
+      required: [true, "Review text is required"],
       trim: true,
+      maxlength: [800, "Review text must be 800 characters or fewer"],
     },
   },
   { timestamps: true }
@@ -29,5 +30,6 @@ const reviewSchema = new mongoose.Schema(
 
 // Restrict to one review from a user to another user
 reviewSchema.index({ fromUser: 1, toUser: 1 }, { unique: true });
+reviewSchema.index({ toUser: 1, createdAt: -1 });
 
 export default mongoose.model("Review", reviewSchema);

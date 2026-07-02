@@ -20,6 +20,7 @@ export function serializeUser(user) {
     location: doc.location || "",
     skillsOffered: doc.skillsOffered || [],
     skillsWanted: doc.skillsWanted || [],
+    availability: doc.availability || { recurring: [], timezone: "Asia/Dhaka" },
     rating: doc.rating || 0,
     reviewCount: doc.reviewCount || 0,
     matchCount: doc.matchCount || 0,
@@ -65,6 +66,51 @@ export function serializeMessage(message) {
     read: Boolean(doc.read),
     timestamp: createdAt,
     createdAt,
+    updatedAt: doc.updatedAt,
+  };
+}
+
+function serializePublicUser(user) {
+  if (!user) return null;
+  const doc = typeof user.toObject === "function" ? user.toObject() : user;
+  const id = toId(doc);
+
+  return {
+    id,
+    uid: id,
+    name: doc.name,
+    avatar: doc.avatar,
+    location: doc.location || "",
+    skillsOffered: doc.skillsOffered || [],
+    skillsWanted: doc.skillsWanted || [],
+  };
+}
+
+export function serializeSwapRequest(request, currentUserId) {
+  if (!request) return null;
+
+  const doc = typeof request.toObject === "function" ? request.toObject() : request;
+  const requester = serializePublicUser(doc.requester);
+  const recipient = serializePublicUser(doc.recipient);
+  const currentId = currentUserId?.toString();
+  const requesterId = requester?.uid || toId(doc.requester);
+  const recipientId = recipient?.uid || toId(doc.recipient);
+
+  return {
+    id: toId(doc),
+    requesterId,
+    recipientId,
+    requester,
+    recipient,
+    peer: currentId === requesterId ? recipient : requester,
+    direction: currentId === requesterId ? "outgoing" : "incoming",
+    matchId: toId(doc.match),
+    offeredSkill: doc.offeredSkill || "",
+    wantedSkill: doc.wantedSkill || "",
+    message: doc.message || "",
+    status: doc.status || "pending",
+    timeline: doc.timeline || [],
+    createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
 }

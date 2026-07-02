@@ -14,9 +14,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <div className="flex flex-col h-screen">
+          <div className="flex min-h-screen flex-col bg-base-100 text-base-content">
             <Navbar />
-            <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            <main className="flex-1 overflow-x-hidden">
               <Routes>
                 <Route path="/"        element={<HomePage />} />
                 <Route path="/login"   element={<LoginPage />} />

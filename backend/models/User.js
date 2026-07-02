@@ -35,6 +35,7 @@ notifPrefs: {
       type: String,
       required: [true, "Please provide a name"],
       trim: true,
+      maxlength: [80, "Name must be 80 characters or fewer"],
     },
     email: {
       type: String,
@@ -50,6 +51,16 @@ notifPrefs: {
       minlength: [8, "Password must be at least 8 characters"],
       select: false, // Don't return password by default
     },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
+    googleUid: {
+      type: String,
+      default: "",
+      index: true,
+    },
     avatar: {
       type: String,
       default: null,
@@ -57,18 +68,28 @@ notifPrefs: {
     bio: {
       type: String,
       default: "",
+      maxlength: [500, "Bio must be 500 characters or fewer"],
     },
     location: {
       type: String,
       default: "",
+      maxlength: [80, "Location must be 80 characters or fewer"],
     },
     skillsOffered: {
       type: [String],
       default: [],
+      validate: {
+        validator: (skills) => skills.length <= 20,
+        message: "You can list up to 20 offered skills",
+      },
     },
     skillsWanted: {
       type: [String],
       default: [],
+      validate: {
+        validator: (skills) => skills.length <= 20,
+        message: "You can list up to 20 wanted skills",
+      },
     },
     rating: {
       type: Number,
@@ -93,6 +114,11 @@ notifPrefs: {
   },
   { timestamps: true }
 );
+
+userSchema.index({ createdAt: -1 });
+userSchema.index({ rating: -1, createdAt: -1 });
+userSchema.index({ skillsOffered: 1 });
+userSchema.index({ skillsWanted: 1 });
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {

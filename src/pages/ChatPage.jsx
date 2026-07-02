@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import {
   Send,
+  Reply,
   Search,
   ArrowLeft,
   LogIn,
@@ -19,7 +20,6 @@ import {
   Star,
   Sparkles,
   FileText,
-  ImageIcon,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -574,7 +574,7 @@ export default function ChatPage() {
   /* AUTH LOADING */
   if (authLoading) {
     return (
-      <div className={`h-full flex items-center justify-center ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
+      <div className={`h-[calc(100dvh-5rem)] w-full flex items-center justify-center ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
         <Loader2 className="animate-spin text-[#e2593b]" size={36} />
       </div>
     );
@@ -582,7 +582,7 @@ export default function ChatPage() {
 
   if (!user) {
     return (
-      <div className={`h-full flex flex-col items-center justify-center gap-4 ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
+      <div className={`h-[calc(100dvh-5rem)] w-full flex flex-col items-center justify-center gap-4 ${isDark ? "bg-[#0b0b0b]" : "bg-[#fcfcfc]"}`}>
         <div className={`w-16 h-16 rounded-[20px] border flex items-center justify-center ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}>
           <MessageSquare size={24} className="text-[#e2593b] opacity-60" />
         </div>
@@ -599,8 +599,8 @@ export default function ChatPage() {
 
   // ── render ─────────────────────────────────────────────────────────────────
   return (
-    <div className={`w-full h-full overflow-hidden border-t ${isDark ? "bg-[#0b0b0b] text-white border-white/[0.04]" : "bg-[#f5f5f5] text-neutral-900 border-neutral-200"}`}>
-      <div className="flex h-full">
+    <div className={`w-full h-[calc(100dvh-5rem)] min-h-0 overflow-hidden border-t ${isDark ? "bg-[#0b0b0b] text-white border-white/[0.04]" : "bg-[#f5f5f5] text-neutral-900 border-neutral-200"}`}>
+      <div className="flex h-full min-h-0">
 
         {/* ══════════════════════════════════
             SIDEBAR
@@ -615,7 +615,7 @@ export default function ChatPage() {
               transition={{ duration: 0.18 }}
               className={`
                 ${showSidebar ? "flex" : "hidden"} lg:flex
-                flex-col w-full sm:w-[290px] lg:w-[290px] shrink-0 border-r
+                flex-col w-full sm:w-[290px] lg:w-[290px] shrink-0 min-h-0 border-r
                 ${isDark ? "bg-[#111111] border-white/[0.07]" : "bg-white border-neutral-200"}
               `}
             >
@@ -642,7 +642,7 @@ export default function ChatPage() {
                   <Search size={12} className={isDark ? "text-white/30" : "text-neutral-400"} />
                   <input
                     className={`flex-1 text-xs outline-none bg-transparent font-medium ${isDark ? "text-white placeholder:text-white/25" : "text-neutral-900 placeholder:text-neutral-400"}`}
-                    placeholder="Search conversations…"
+                    placeholder="Search conversations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -750,7 +750,7 @@ export default function ChatPage() {
         {/* ══════════════════════════════════
             MAIN CHAT AREA
         ══════════════════════════════════ */}
-        <main className={`flex-1 flex flex-col min-w-0 ${isDark ? "bg-[#0b0b0b]" : "bg-[#f5f5f5]"}`}>
+        <main className={`flex-1 flex flex-col min-w-0 min-h-0 ${isDark ? "bg-[#0b0b0b]" : "bg-[#f5f5f5]"}`}>
 
           {/* Chat header */}
           {selectedPeer ? (
@@ -831,7 +831,7 @@ export default function ChatPage() {
               ) : (
                 <>
                   {/* Message list */}
-                  <div className="flex-1 overflow-y-auto px-4 py-4">
+                  <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
                     {messagesLoading ? (
                       <MessageSkeleton isDark={isDark} />
                     ) : messagesError ? (
@@ -899,7 +899,9 @@ export default function ChatPage() {
                                           onClick={() => setReplyingTo({ id: msg.id, text: msg.text })}
                                           title="Reply"
                                           className={`p-1.5 rounded-lg text-[11px] transition-colors ${isDark ? "hover:bg-white/[0.06] text-white/30" : "hover:bg-neutral-100 text-neutral-400"}`}
-                                        >↩</button>
+                                        >
+                                          <Reply size={11} />
+                                        </button>
                                         <button
                                           onClick={() => toggleStar(msg.id)}
                                           title="Star"
@@ -969,7 +971,9 @@ export default function ChatPage() {
                                           onClick={() => setReplyingTo({ id: msg.id, text: msg.text })}
                                           title="Reply"
                                           className={`p-1.5 rounded-lg text-[11px] transition-colors ${isDark ? "hover:bg-white/[0.06] text-white/30" : "hover:bg-neutral-100 text-neutral-400"}`}
-                                        >↩</button>
+                                        >
+                                          <Reply size={11} />
+                                        </button>
                                         <button
                                           onClick={() => toggleStar(msg.id)}
                                           title="Star"
@@ -1012,7 +1016,7 @@ export default function ChatPage() {
                         >
                           <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-l-2 border-[#e2593b] ${isDark ? "bg-white/[0.03]" : "bg-neutral-50"}`}>
                             <span className={`text-[10px] font-medium flex-1 truncate ${isDark ? "text-white/45" : "text-neutral-500"}`}>
-                              ↩ {replyingTo.text}
+                              Replying to {replyingTo.text}
                             </span>
                             <button onClick={() => setReplyingTo(null)} className={`${isDark ? "text-white/25 hover:text-white/50" : "text-neutral-300 hover:text-neutral-500"}`}>
                               <X size={11} />
@@ -1115,7 +1119,7 @@ export default function ChatPage() {
                           e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
                         }}
                         onKeyDown={handleKeyDown}
-                        placeholder={attachments.length > 0 ? "Add a caption…" : "Write a message…"}
+                        placeholder={attachments.length > 0 ? "Add a caption..." : "Write a message..."}
                         className={`
                           flex-1 resize-none px-2 py-2 text-xs outline-none bg-transparent
                           max-h-[120px] leading-relaxed font-medium
@@ -1155,7 +1159,7 @@ export default function ChatPage() {
                     </div>
 
                     <p className={`text-[9px] font-medium text-center mt-1.5 ${isDark ? "text-white/10" : "text-neutral-300"}`}>
-                      Enter to send · Shift+Enter for new line · Esc to cancel reply
+                      Enter to send / Shift+Enter for new line / Esc to cancel reply
                     </p>
                   </div>
                 </>

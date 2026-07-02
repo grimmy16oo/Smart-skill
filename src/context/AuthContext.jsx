@@ -1,5 +1,11 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { getCurrentUser, loginUser, logoutUser, registerWithProfile } from "../services/authService";
+import {
+  getCurrentUser,
+  loginUser,
+  loginWithGoogle as loginWithGoogleUser,
+  logoutUser,
+  registerWithProfile,
+} from "../services/authService";
 import { getToken, normalizeUser } from "../services/api";
 import { getUserProfile } from "../services/userService";
 
@@ -80,6 +86,12 @@ export function AuthProvider({ children }) {
     return loggedInUser;
   };
 
+  const loginWithGoogle = async () => {
+    const loggedInUser = await loginWithGoogleUser();
+    setSessionUser(loggedInUser);
+    return loggedInUser;
+  };
+
   const logout = async () => {
     await logoutUser();
     setUser(null);
@@ -100,6 +112,7 @@ export function AuthProvider({ children }) {
         profileLoading,
         register,
         login,
+        loginWithGoogle,
         logout,
         refreshProfile,
         isAuthenticated: !!user,

@@ -15,6 +15,13 @@ function isObjectId(value) {
   return mongoose.Types.ObjectId.isValid(value);
 }
 
+function cleanReviewText(value) {
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 800);
+}
+
 router.get("/featured", async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 3, 12);
@@ -135,7 +142,8 @@ router.post("/:id/reviews", protect, async (req, res) => {
   try {
     const targetId = req.params.id;
     const reviewerId = req.userId;
-    const { rating, text } = req.body;
+    const rating = Number(req.body.rating);
+    const text = cleanReviewText(req.body.text);
 
     if (!isObjectId(targetId)) {
       return res.status(400).json({ message: "Invalid user id" });
@@ -145,8 +153,12 @@ router.post("/:id/reviews", protect, async (req, res) => {
       return res.status(400).json({ message: "You cannot review yourself" });
     }
 
-    if (!rating || rating < 1 || rating > 5) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return res.status(400).json({ message: "Rating must be between 1 and 5" });
+    }
+
+    if (!text) {
+      return res.status(400).json({ message: "Review text is required" });
     }
 
     // Verify they have matched before allowing a review

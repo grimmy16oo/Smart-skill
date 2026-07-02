@@ -10,8 +10,11 @@ import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 
 import authRoutes from "./routes/auth.js";
+import calendarRoutes from "./routes/googleCalendar.js";
 import matchRoutes from "./routes/matches.js";
 import messageRoutes from "./routes/messages.js";
+import sessionRoutes from "./routes/sessions.js";
+import swapRequestRoutes from "./routes/swapRequests.js";
 import uploadRoutes from "./routes/uploads.js";
 import userRoutes from "./routes/users.js";
 import profileRoutes from "./routes/mongoRoutes.js";
@@ -107,9 +110,13 @@ app.get("/api/health", (req, res) => {
 
 // ---------------- ROUTES ----------------
 app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes);
+app.use("/api/calendar", calendarRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/matches", matchRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/sessions", sessionRoutes);
+app.use("/api/swap-requests", swapRequestRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api", profileRoutes); // IMPORTANT: must come after /api/* routes
 

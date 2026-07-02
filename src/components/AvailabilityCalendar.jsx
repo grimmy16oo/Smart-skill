@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Clock, Globe, Plus, X, Check, Calendar } from "lucide-react";
 import { getUserAvailability, updateUserAvailability, bookSession } from "../services/profileFeatureService";
+import { connectGoogleCalendar, getCalendarStatus } from "../services/calendarService";
 import { useAuth } from "../context/AuthContext";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -156,6 +157,8 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
   const [booking,      setBooking]      = useState(false);
   const [bookError,    setBookError]    = useState("");
   const [bookSuccess,  setBookSuccess]  = useState(false);
+  const [calendarStatus, setCalendarStatus] = useState(null);
+  const [calendarLoading, setCalendarLoading] = useState(false);
 
   // ── Fetch availability ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -188,6 +191,28 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
 
     return () => { cancelled = true; };
   }, [uid]);
+
+  useEffect(() => {
+    if (!user?.uid || !showBooking) return;
+
+    let cancelled = false;
+    setCalendarLoading(true);
+
+    getCalendarStatus()
+      .then((status) => {
+        if (!cancelled) setCalendarStatus(status);
+      })
+      .catch(() => {
+        if (!cancelled) setCalendarStatus({ connected: false });
+      })
+      .finally(() => {
+        if (!cancelled) setCalendarLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, showBooking]);
 
   // ── Save availability ───────────────────────────────────────────────────────
   async function handleSave() {

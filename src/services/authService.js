@@ -1,5 +1,11 @@
 import { apiRequest, clearToken, normalizeUser, setToken } from "./api";
 import { buildAvatarUrl } from "./userService";
+import { auth } from "../firebase";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
 
 /* ================= ERROR MAPPING ================= */
 function mapAuthError(error) {
@@ -73,6 +79,26 @@ export async function loginUser(email, password) {
   }
 }
 
+/* ================= GOOGLE LOGIN ================= */
+export async function loginWithGoogle() {
+  try {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+
+    const credential = await signInWithPopup(auth, provider);
+    const idToken = await credential.user.getIdToken();
+
+    const data = await apiRequest("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+    });
+
+    return storeAuthResponse(data);
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
 /* ================= CURRENT USER ================= */
 export async function getCurrentUser() {
   const data = await apiRequest("/auth/me");
@@ -81,5 +107,9 @@ export async function getCurrentUser() {
 
 /* ================= LOGOUT ================= */
 export async function logoutUser() {
+  if (auth.currentUser) {
+    await signOut(auth);
+  }
+
   clearToken();
 }

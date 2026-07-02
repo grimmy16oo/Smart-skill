@@ -1,6 +1,8 @@
 import express from "express";
+import crypto from "crypto";
 import User from "../models/User.js";
 import { generateToken, protect } from "../middleware/auth.js";
+import { verifyGoogleIdToken } from "../config/firebaseAdmin.js";
 import { serializeUser } from "../utils/serializers.js";
 
 const router = express.Router();
@@ -10,7 +12,15 @@ function cleanSkillList(value) {
 
   return value
     .map((skill) => String(skill).trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
+function cleanText(value, maxLength) {
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, maxLength);
 }
 
 function getAuthPayload(user) {
@@ -38,6 +48,10 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Name, email, and password are required" });
     }
 
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne({ email: normalizedEmail });
 
@@ -46,11 +60,11 @@ router.post("/register", async (req, res) => {
     }
 
     const user = await User.create({
-      name: name.trim(),
+      name: cleanText(name, 80),
       email: normalizedEmail,
       password,
-      bio: bio?.trim() || "",
-      location: location?.trim() || "",
+      bio: cleanText(bio, 500),
+      location: cleanText(location, 80),
       skillsOffered: cleanSkillList(skillsOffered),
       skillsWanted: cleanSkillList(skillsWanted),
       avatar: avatar || "",
@@ -82,6 +96,53 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.post("/google", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ message: "Google credential is required" });
+    }
+
+    const decoded = await verifyGoogleIdToken(idToken);
+    const email = decoded.email?.trim().toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({ message: "Google account must include an email" });
+    }
+
+    let user = await User.findOne({
+      $or: [{ email }, { googleUid: decoded.uid }],
+    });
+
+    if (!user) {
+      user = await User.create({
+        name: cleanText(decoded.name || email.split("@")[0], 80),
+        email,
+        password: crypto.randomBytes(32).toString("hex"),
+        authProvider: "google",
+        googleUid: decoded.uid,
+        avatar: decoded.picture || "",
+        bio: "",
+        location: "",
+        skillsOffered: [],
+        skillsWanted: [],
+      });
+    } else {
+      user.googleUid = user.googleUid || decoded.uid;
+      user.authProvider = user.authProvider === "local" ? "local" : "google";
+      if (!user.avatar && decoded.picture) user.avatar = decoded.picture;
+      if (!user.name && decoded.name) user.name = cleanText(decoded.name, 80);
+      await user.save();
+    }
+
+    res.status(200).json(getAuthPayload(user));
+  } catch (error) {
+    console.error("Google auth failed:", error.message);
+    res.status(401).json({ message: "Google sign-in failed" });
+  }
+});
+
 router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -106,10 +167,20 @@ router.put("/profile", protect, async (req, res) => {
 
       if (field === "skillsOffered" || field === "skillsWanted") {
         updates[field] = cleanSkillList(req.body[field]);
+      } else if (field === "name") {
+        updates[field] = cleanText(req.body[field], 80);
+      } else if (field === "bio") {
+        updates[field] = cleanText(req.body[field], 500);
+      } else if (field === "location") {
+        updates[field] = cleanText(req.body[field], 80);
       } else {
-        updates[field] = String(req.body[field]).trim();
+        updates[field] = String(req.body[field] ?? "").trim();
       }
     });
+
+    if (updates.name !== undefined && !updates.name) {
+      return res.status(400).json({ message: "Name is required" });
+    }
 
     const user = await User.findByIdAndUpdate(req.userId, updates, {
       new: true,
