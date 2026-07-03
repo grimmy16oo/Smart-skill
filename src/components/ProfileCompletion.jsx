@@ -6,7 +6,7 @@
  * Props:
  *  - profile      {object}   merged displayProfile
  *  - isDark       {boolean}
- *  - activityCount {number}  number of completed sessions (for first exchange badge)
+ *  - activityCount {number}  retained for compatibility
  */
 
 import { useMemo } from "react";
@@ -64,8 +64,8 @@ export default function ProfileCompletion({ profile, isDark, activityCount = 0 }
     },
     {
       id: "bio",
-      label: "Write a bio (50+ characters)",
-      done: (profile?.bio?.length ?? 0) >= 50,
+      label: "Write a bio",
+      done: !!(profile?.bio?.trim()),
     },
     {
       id: "location",
@@ -74,18 +74,13 @@ export default function ProfileCompletion({ profile, isDark, activityCount = 0 }
     },
     {
       id: "offered",
-      label: "Add at least 3 skills you can teach",
-      done: (profile?.skillsOffered?.length ?? 0) >= 3,
+      label: "Add at least 1 skill you can teach",
+      done: (profile?.skillsOffered?.length ?? 0) >= 1,
     },
     {
       id: "wanted",
-      label: "Add at least 2 skills you want to learn",
-      done: (profile?.skillsWanted?.length ?? 0) >= 2,
-    },
-    {
-      id: "exchange",
-      label: "Complete your first skill exchange",
-      done: activityCount >= 1,
+      label: "Add at least 1 skill you want to learn",
+      done: (profile?.skillsWanted?.length ?? 0) >= 1,
     },
   ], [profile, activityCount]);
 

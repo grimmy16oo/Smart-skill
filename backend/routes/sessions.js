@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Match from "../models/Match.js";
 import Session from "../models/Session.js";
 import User from "../models/User.js";
+import Activity from "../models/Activity.js";
 import { protect } from "../middleware/auth.js";
 import {
   createCalendarEvent,
@@ -23,16 +24,21 @@ function cleanText(value, maxLength) {
     .slice(0, maxLength);
 }
 
+function getId(value) {
+  return value?._id?.toString?.() || value?.toString?.() || "";
+}
+
 function serializeSession(session) {
   if (!session) return null;
   const doc = typeof session.toObject === "function" ? session.toObject() : session;
 
   return {
     id: doc._id.toString(),
-    requesterId: doc.requesterId?.toString(),
-    targetId: doc.targetId?.toString(),
-    teacherId: doc.teacherId?._id?.toString?.() || doc.teacherId?.toString?.(),
-    learnerId: doc.learnerId?._id?.toString?.() || doc.learnerId?.toString?.(),
+    requesterId: getId(doc.requesterId),
+    targetId: getId(doc.targetId),
+    teacherId: getId(doc.teacherId),
+    learnerId: getId(doc.learnerId),
+    proposedBy: getId(doc.proposedBy),
     teacher: doc.teacherId?.name ? doc.teacherId : null,
     learner: doc.learnerId?.name ? doc.learnerId : null,
     matchId: doc.matchId || "",
@@ -183,8 +189,8 @@ router.post("/:id/confirm", protect, async (req, res) => {
     const session = await getParticipantSession(req.params.id, req.userId);
     if (!session) return res.status(404).json({ message: "Session not found" });
 
-    if (session.learnerId._id.toString() !== req.userId.toString()) {
-      return res.status(403).json({ message: "Only the learner can confirm this session" });
+    if (session.proposedBy?.toString() === req.userId.toString()) {
+      return res.status(403).json({ message: "The other person needs to confirm this session" });
     }
 
     if (!["pending", "rescheduled"].includes(session.status)) {
@@ -195,7 +201,11 @@ router.post("/:id/confirm", protect, async (req, res) => {
     session.confirmedBy = req.userId;
     session.meetingLink = cleanText(req.body.meetingLink ?? session.meetingLink, 500);
 
-    await syncConfirmedSessionToCalendar(session);
+    try {
+      await syncConfirmedSessionToCalendar(session);
+    } catch (error) {
+      if (error.status !== 428) throw error;
+    }
     await session.save();
 
     const populated = await getParticipantSession(session._id, req.userId);
@@ -231,6 +241,56 @@ router.patch("/:id/reschedule", protect, async (req, res) => {
     }
 
     await session.save();
+    const populated = await getParticipantSession(session._id, req.userId);
+    res.json({ success: true, session: serializeSession(populated) });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+});
+
+router.post("/:id/complete", protect, async (req, res) => {
+  try {
+    const session = await getParticipantSession(req.params.id, req.userId);
+    if (!session) return res.status(404).json({ message: "Session not found" });
+
+    if (session.status === "completed") {
+      return res.json({ success: true, session: serializeSession(session) });
+    }
+
+    if (session.status !== "confirmed") {
+      return res.status(400).json({ message: "Only confirmed sessions can be completed" });
+    }
+
+    session.status = "completed";
+    await session.save();
+
+    const completedAt = new Date();
+    const skill = cleanText(session.skill || "Skill exchange", 120);
+    const duration = Number(session.durationMinutes) || 0;
+    const teacherId = session.teacherId._id;
+    const learnerId = session.learnerId._id;
+
+    await Activity.create([
+      {
+        userId: teacherId,
+        type: "taught",
+        skill,
+        partnerName: session.learnerId.name || "Skill partner",
+        partnerId: learnerId,
+        completedAt,
+        sessionDuration: duration,
+      },
+      {
+        userId: learnerId,
+        type: "learned",
+        skill,
+        partnerName: session.teacherId.name || "Skill partner",
+        partnerId: teacherId,
+        completedAt,
+        sessionDuration: duration,
+      },
+    ]);
+
     const populated = await getParticipantSession(session._id, req.userId);
     res.json({ success: true, session: serializeSession(populated) });
   } catch (error) {

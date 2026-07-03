@@ -69,7 +69,12 @@ export async function fetchGitHubMeta(githubUrl) {
 
 // 3. ACTIVITY
 export function getUserActivities(uid, limit = 50) {
-  return api("GET", `/api/users/${uid}/activities?limit=${limit}`);
+  return api("GET", `/api/users/${uid}/activities?limit=${limit}`).then((activities = []) =>
+    activities.map((activity) => ({
+      id: activity.id || activity._id,
+      ...activity,
+    }))
+  );
 }
 
 export function logActivity(uid, data) {

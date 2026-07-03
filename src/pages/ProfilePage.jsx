@@ -28,7 +28,6 @@ import {
   Activity,
   Briefcase,
   ClipboardCheck,
-  Bell,
   ChevronRight,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -45,8 +44,6 @@ import {
   getSkillMeta,
   updateSkillMeta,
   endorseSkill,
-  getNotifPrefs,
-  updateNotifPrefs,
   getUserActivities,
 } from "../services/profileFeatureService";
 import UserAvatar from "../components/UserAvatar";
@@ -224,8 +221,6 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState([]);
   const [skillMetaMap, setSkillMetaMap] = useState({});
   const [activityCount, setActivityCount] = useState(0);
-  const [notifPrefs, setNotifPrefs] = useState({ email: true, browser: false, inApp: true });
-  const [savingNotif, setSavingNotif] = useState(false);
   const isOwnProfile = !id || id === user?.uid;
 
   const displayProfile = useMemo(() => {
@@ -267,11 +262,6 @@ export default function ProfilePage() {
       })
       .catch(console.error);
   }, [displayProfile?.uid]);
-
-  useEffect(() => {
-    if (!isOwnProfile || !user?.uid) return;
-    getNotifPrefs(user.uid).then(setNotifPrefs).catch(console.error);
-  }, [isOwnProfile, user?.uid]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -373,13 +363,6 @@ export default function ProfilePage() {
     }));
   };
 
-  const handleNotifSave = async (prefs) => {
-    setSavingNotif(true);
-    await updateNotifPrefs(user.uid, prefs).catch(console.error);
-    setNotifPrefs(prefs);
-    setSavingNotif(false);
-  };
-
   const inputClasses = `px-3.5 py-2.5 text-sm font-medium rounded-xl border outline-none transition-all ${
     isDark
       ? "bg-neutral-900 text-white border-white/10 placeholder:text-neutral-500 focus:border-[#e2593b]"
@@ -396,7 +379,6 @@ export default function ProfilePage() {
     { id: "sec-activity",   label: "Activity",    icon: Activity,      accent: "text-emerald-500" },
     { id: "sec-schedule",   label: "Schedule",    icon: Calendar,      accent: "text-cyan-500" },
     { id: "sec-reviews",    label: "Reviews",     icon: Star,          accent: "text-amber-500" },
-    ...(isOwnProfile ? [{ id: "sec-settings",   label: "Settings",    icon: Bell,          accent: "text-purple-500" }] : []),
   ];
 
   // ── loading / error / auth gates ──────────────────────────────────────────
@@ -822,42 +804,6 @@ export default function ProfilePage() {
                 SECTION 8 — SETTINGS / NOTIFS
                 (own profile only)
             ══════════════════════════════════ */}
-            {isOwnProfile && (
-              <ProfileSection
-                id="sec-settings"
-                icon={Bell}
-                title="Notification settings"
-                accent="text-purple-500"
-                isDark={isDark}
-              >
-                <div className="flex flex-wrap gap-6">
-                  {[["email", "Email notifications"], ["browser", "Browser push"], ["inApp", "In-app alerts"]].map(([key, label]) => (
-                    <label key={key} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${
-                      notifPrefs[key]
-                        ? isDark ? "bg-white/[0.04] border-white/[0.12]" : "bg-neutral-50 border-neutral-300"
-                        : isDark ? "border-white/[0.05]" : "border-neutral-200"
-                    }`}>
-                      <input
-                        type="checkbox"
-                        checked={notifPrefs[key]}
-                        onChange={(e) => {
-                          const updated = { ...notifPrefs, [key]: e.target.checked };
-                          setNotifPrefs(updated);
-                          handleNotifSave(updated);
-                        }}
-                        className="accent-[#e2593b] w-3.5 h-3.5"
-                      />
-                      <span className={`text-xs font-semibold ${isDark ? "text-neutral-300" : "text-neutral-700"}`}>{label}</span>
-                      {savingNotif && <Loader2 size={11} className="animate-spin text-[#e2593b]" />}
-                    </label>
-                  ))}
-                </div>
-                <p className={`mt-4 text-[10px] font-medium ${isDark ? "text-neutral-600" : "text-neutral-400"}`}>
-                  Changes save automatically.
-                </p>
-              </ProfileSection>
-            )}
-
             <div className="h-4" aria-hidden="true" />
           </div>
         </div>

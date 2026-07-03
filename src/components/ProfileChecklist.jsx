@@ -7,21 +7,19 @@ export default function ProfileChecklist({ completion, profile, suggestedSkills,
   
   const items = [
     { key: 'avatar', label: 'Add profile photo', tip: 'Profiles with photos get 5x more matches' },
-    { key: 'bio', label: 'Write a bio (50+ chars)', tip: 'Users with bios get 3x more connections' },
+    { key: 'bio', label: 'Write a bio', tip: 'Tell people what you want to exchange' },
     { key: 'location', label: 'Add your location', tip: 'Find local skill exchanges' },
-    { key: 'skillsOffered', label: 'Add 3+ skills you can teach', tip: 'More skills = more matches' },
-    { key: 'skillsWanted', label: 'Add 2+ skills to learn', tip: 'Show what you want to learn' },
-    { key: 'firstExchange', label: 'Complete first skill exchange', tip: 'Earn your first achievement!' }
+    { key: 'skillsOffered', label: 'Add 1+ skill you can teach', tip: 'One skill is enough to start' },
+    { key: 'skillsWanted', label: 'Add 1+ skill to learn', tip: 'Show what you want to learn' }
   ];
   
   const isCompleted = (key) => {
     switch(key) {
       case 'avatar': return profile.avatar && profile.avatar !== '';
-      case 'bio': return profile.bio && profile.bio.length >= 50;
+      case 'bio': return profile.bio && profile.bio.trim() !== '';
       case 'location': return profile.location && profile.location !== '';
-      case 'skillsOffered': return profile.skillsOffered && profile.skillsOffered.length >= 3;
-      case 'skillsWanted': return profile.skillsWanted && profile.skillsWanted.length >= 2;
-      case 'firstExchange': return false; // This will come from activities
+      case 'skillsOffered': return profile.skillsOffered && profile.skillsOffered.length >= 1;
+      case 'skillsWanted': return profile.skillsWanted && profile.skillsWanted.length >= 1;
       default: return false;
     }
   };

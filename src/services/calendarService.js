@@ -23,6 +23,11 @@ export async function createLearningSession(payload) {
   return data.session;
 }
 
+export async function getLearningSessions() {
+  const data = await apiRequest("/sessions");
+  return data.sessions || [];
+}
+
 export async function confirmLearningSession(sessionId, payload = {}) {
   const data = await apiRequest(`/sessions/${sessionId}/confirm`, {
     method: "POST",
@@ -42,6 +47,13 @@ export async function rescheduleLearningSession(sessionId, payload) {
 export async function cancelLearningSession(sessionId) {
   const data = await apiRequest(`/sessions/${sessionId}`, {
     method: "DELETE",
+  });
+  return data.session;
+}
+
+export async function completeLearningSession(sessionId) {
+  const data = await apiRequest(`/sessions/${sessionId}/complete`, {
+    method: "POST",
   });
   return data.session;
 }

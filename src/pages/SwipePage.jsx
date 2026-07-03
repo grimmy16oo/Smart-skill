@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Check,
   RotateCcw,
   SlidersHorizontal,
   X,
@@ -498,15 +497,15 @@ export default function SwipePage() {
               <button
                 onClick={() => handleSwipe("like")}
                 disabled={!deckUsers.length || swiping}
-                className={`w-20 h-12 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 ${
+                className={`px-6 h-12 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer disabled:opacity-20 active:scale-95 font-semibold ${
                   isDark 
                     ? "border-white/[0.08] bg-white/[0.02] text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30" 
                     : "border-neutral-900/[0.08] bg-neutral-900/[0.02] text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/20 shadow-sm"
                 }`}
-                title="Like"
-                aria-label="Like this profile"
+                title="Accept"
+                aria-label="Accept this profile"
               >
-                <Check size={20} />
+                Accept
               </button>
             </div>
           </div>

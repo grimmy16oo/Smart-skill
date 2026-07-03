@@ -153,16 +153,13 @@ export async function updatePresence(userId, status, currentSkill = null) {
 // ============ PROFILE COMPLETION ============
 export async function getProfileCompletion(userId, profile) {
   let completed = 0;
-  const total = 6;
+  const total = 5;
   
   if (profile.avatar && profile.avatar !== '') completed++;
-  if (profile.bio && profile.bio.length >= 50) completed++;
+  if (profile.bio && profile.bio.trim() !== '') completed++;
   if (profile.location && profile.location !== '') completed++;
-  if (profile.skillsOffered && profile.skillsOffered.length >= 3) completed++;
-  if (profile.skillsWanted && profile.skillsWanted.length >= 2) completed++;
-  
-  const activities = await getUserActivities(userId);
-  if (activities.some(a => a.type === 'exchange_completed')) completed++;
+  if (profile.skillsOffered && profile.skillsOffered.length >= 1) completed++;
+  if (profile.skillsWanted && profile.skillsWanted.length >= 1) completed++;
   
   return { percentage: Math.round((completed / total) * 100), completed, total };
 }

@@ -13,7 +13,12 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Clock, Globe, Plus, X, Check, Calendar } from "lucide-react";
 import { getUserAvailability, updateUserAvailability, bookSession } from "../services/profileFeatureService";
-import { connectGoogleCalendar, getCalendarStatus } from "../services/calendarService";
+import {
+  cancelLearningSession,
+  completeLearningSession,
+  confirmLearningSession,
+  getLearningSessions,
+} from "../services/calendarService";
 import { useAuth } from "../context/AuthContext";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -24,6 +29,27 @@ function detectTimezone() {
 
 function formatSlot(slot) {
   return `${DAY_NAMES[slot.dayOfWeek]} ${slot.startTime}–${slot.endTime}`;
+}
+
+function formatSessionTime(value) {
+  if (!value) return "Time not set";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Time not set";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function statusLabel(status) {
+  if (status === "pending") return "Pending";
+  if (status === "confirmed") return "Confirmed";
+  if (status === "completed") return "Completed";
+  if (status === "cancelled") return "Cancelled";
+  if (status === "rescheduled") return "Rescheduled";
+  return status || "Session";
 }
 
 function TimeInput({ value, onChange, isDark, label }) {
@@ -157,8 +183,10 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
   const [booking,      setBooking]      = useState(false);
   const [bookError,    setBookError]    = useState("");
   const [bookSuccess,  setBookSuccess]  = useState(false);
-  const [calendarStatus, setCalendarStatus] = useState(null);
-  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionError, setSessionError] = useState("");
+  const [updatingSessionId, setUpdatingSessionId] = useState("");
 
   // ── Fetch availability ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -192,27 +220,23 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
     return () => { cancelled = true; };
   }, [uid]);
 
+  async function loadSessions() {
+    if (!user?.uid) return;
+    setSessionsLoading(true);
+    setSessionError("");
+    try {
+      const next = await getLearningSessions();
+      setSessions(next);
+    } catch (e) {
+      setSessionError(e.message || "Could not load sessions.");
+    } finally {
+      setSessionsLoading(false);
+    }
+  }
+
   useEffect(() => {
-    if (!user?.uid || !showBooking) return;
-
-    let cancelled = false;
-    setCalendarLoading(true);
-
-    getCalendarStatus()
-      .then((status) => {
-        if (!cancelled) setCalendarStatus(status);
-      })
-      .catch(() => {
-        if (!cancelled) setCalendarStatus({ connected: false });
-      })
-      .finally(() => {
-        if (!cancelled) setCalendarLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.uid, showBooking]);
+    loadSessions();
+  }, [user?.uid]);
 
   // ── Save availability ───────────────────────────────────────────────────────
   async function handleSave() {
@@ -272,12 +296,29 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
         durationMinutes: bookDuration,
         skill:           bookSkill,
       });
+      await loadSessions();
       setBookSuccess(true);
       setTimeout(() => { setShowBooking(false); setBookSuccess(false); setBookDate(null); setBookSkill(""); }, 2500);
     } catch (e) {
       setBookError(e.message || "Booking failed. Please try again.");
     } finally {
       setBooking(false);
+    }
+  }
+
+  async function handleSessionAction(sessionId, action) {
+    if (!sessionId || updatingSessionId) return;
+    setUpdatingSessionId(sessionId);
+    setSessionError("");
+    try {
+      if (action === "confirm") await confirmLearningSession(sessionId);
+      if (action === "complete") await completeLearningSession(sessionId);
+      if (action === "cancel") await cancelLearningSession(sessionId);
+      await loadSessions();
+    } catch (e) {
+      setSessionError(e.message || "Could not update session.");
+    } finally {
+      setUpdatingSessionId("");
     }
   }
 
@@ -290,6 +331,14 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
 
   const displaySlots = editMode ? draftSlots : (availability?.recurring ?? []);
   const displayTz    = editMode ? tz : (availability?.timezone ?? detectTimezone());
+  const visibleSessions = sessions
+    .filter((session) => {
+      if (isOwnProfile) return true;
+      const otherId = targetUid ?? uid;
+      return [session.teacherId, session.learnerId, session.requesterId, session.targetId].includes(otherId);
+    })
+    .slice()
+    .sort((a, b) => new Date(b.scheduledAt || 0) - new Date(a.scheduledAt || 0));
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -516,6 +565,103 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
           </AnimatePresence>
         </div>
       )}
+
+      <div className="pt-2 border-t border-white/[0.06]">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+            Sessions
+          </p>
+          {sessionsLoading && <Loader2 size={12} className="animate-spin text-[#e2593b]" />}
+        </div>
+
+        {sessionError && <p className="mb-3 text-xs font-medium text-rose-500">{sessionError}</p>}
+
+        {!sessionsLoading && visibleSessions.length === 0 ? (
+          <p className={`text-xs font-medium ${isDark ? "text-white/20" : "text-neutral-400"}`}>
+            {isOwnProfile ? "No sessions scheduled yet." : "No sessions scheduled with this person yet."}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {visibleSessions.map((session) => {
+              const isRequester = session.requesterId === user?.uid;
+              const canConfirm = ["pending", "rescheduled"].includes(session.status) && !isRequester;
+              const canComplete = session.status === "confirmed";
+              const isUpdating = updatingSessionId === session.id;
+
+              return (
+                <div
+                  key={session.id}
+                  className={`rounded-2xl border p-3 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold truncate">{session.skill || "Skill exchange"}</p>
+                      <p className={`mt-1 text-[10px] font-medium ${isDark ? "text-neutral-500" : "text-neutral-500"}`}>
+                        {formatSessionTime(session.scheduledAt)} · {session.durationMinutes || 60} min
+                      </p>
+                      <p className={`mt-1 text-[10px] font-medium ${isDark ? "text-neutral-500" : "text-neutral-500"}`}>
+                        {session.teacher?.name || "Teacher"} teaches {session.learner?.name || "learner"}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-widest ${
+                      session.status === "completed"
+                        ? "bg-emerald-500/10 text-emerald-500"
+                        : session.status === "confirmed"
+                        ? "bg-blue-500/10 text-blue-500"
+                        : session.status === "cancelled"
+                        ? "bg-rose-500/10 text-rose-500"
+                        : "bg-amber-500/10 text-amber-500"
+                    }`}>
+                      {statusLabel(session.status)}
+                    </span>
+                  </div>
+
+                  {session.status !== "cancelled" && session.status !== "completed" && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {canConfirm && (
+                        <button
+                          type="button"
+                          onClick={() => handleSessionAction(session.id, "confirm")}
+                          disabled={isUpdating}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${
+                            isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                          } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          {isUpdating ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+                          Confirm
+                        </button>
+                      )}
+                      {canComplete && (
+                        <button
+                          type="button"
+                          onClick={() => handleSessionAction(session.id, "complete")}
+                          disabled={isUpdating}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${
+                            isDark ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                          } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          {isUpdating ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+                          Complete exchange
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleSessionAction(session.id, "cancel")}
+                        disabled={isUpdating}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${
+                          isDark ? "border-white/10 text-neutral-400 hover:bg-white/[0.04]" : "border-neutral-200 text-neutral-500 hover:bg-neutral-100"
+                        } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
