@@ -12,7 +12,11 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Clock, Globe, Plus, X, Check, Calendar } from "lucide-react";
-import { getUserAvailability, updateUserAvailability, bookSession } from "../services/profileFeatureService";
+import {
+  getUserAvailability,
+  updateUserAvailability,
+  bookSession,
+} from "../services/profileFeatureService";
 import {
   cancelLearningSession,
   completeLearningSession,
@@ -55,7 +59,9 @@ function statusLabel(status) {
 function TimeInput({ value, onChange, isDark, label }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+      <span
+        className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+      >
         {label}
       </span>
       <input
@@ -93,32 +99,50 @@ function MiniCalendar({ selectedDate, onSelect, isDark }) {
   ];
 
   return (
-    <div className={`rounded-2xl border p-4 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}>
+    <div
+      className={`rounded-2xl border p-4 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}
+    >
       <div className="flex items-center justify-between mb-3">
         <button
           type="button"
-          onClick={() => setView((v) => {
-            const m = v.month === 0 ? 11 : v.month - 1;
-            return { year: v.month === 0 ? v.year - 1 : v.year, month: m };
-          })}
+          onClick={() =>
+            setView((v) => {
+              const m = v.month === 0 ? 11 : v.month - 1;
+              return { year: v.month === 0 ? v.year - 1 : v.year, month: m };
+            })
+          }
           className={`p-1 rounded-lg text-xs font-bold ${isDark ? "hover:bg-white/[0.06] text-neutral-400" : "hover:bg-neutral-100 text-neutral-500"}`}
-        >‹</button>
+        >
+          ‹
+        </button>
         <span className="text-[10px] font-bold uppercase tracking-widest">
-          {new Date(view.year, view.month).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+          {new Date(view.year, view.month).toLocaleDateString(undefined, {
+            month: "long",
+            year: "numeric",
+          })}
         </span>
         <button
           type="button"
-          onClick={() => setView((v) => {
-            const m = v.month === 11 ? 0 : v.month + 1;
-            return { year: v.month === 11 ? v.year + 1 : v.year, month: m };
-          })}
+          onClick={() =>
+            setView((v) => {
+              const m = v.month === 11 ? 0 : v.month + 1;
+              return { year: v.month === 11 ? v.year + 1 : v.year, month: m };
+            })
+          }
           className={`p-1 rounded-lg text-xs font-bold ${isDark ? "hover:bg-white/[0.06] text-neutral-400" : "hover:bg-neutral-100 text-neutral-500"}`}
-        >›</button>
+        >
+          ›
+        </button>
       </div>
 
       <div className="grid grid-cols-7 mb-1">
         {DAY_NAMES.map((d) => (
-          <span key={d} className={`text-center text-[9px] font-bold uppercase tracking-widest py-1 ${isDark ? "text-neutral-600" : "text-neutral-400"}`}>{d}</span>
+          <span
+            key={d}
+            className={`text-center text-[9px] font-bold uppercase tracking-widest py-1 ${isDark ? "text-neutral-600" : "text-neutral-400"}`}
+          >
+            {d}
+          </span>
         ))}
       </div>
 
@@ -137,14 +161,22 @@ function MiniCalendar({ selectedDate, onSelect, isDark }) {
               onClick={() => onSelect(isSelected ? null : dateStr)}
               className={`w-full aspect-square rounded-lg text-[10px] font-bold transition-all active:scale-90 ${
                 isPast
-                  ? isDark ? "text-neutral-700 cursor-not-allowed" : "text-neutral-300 cursor-not-allowed"
+                  ? isDark
+                    ? "text-neutral-700 cursor-not-allowed"
+                    : "text-neutral-300 cursor-not-allowed"
                   : isSelected
-                  ? "bg-[#e2593b] text-white"
-                  : isToday
-                  ? isDark ? "bg-white/10 text-white" : "bg-neutral-200 text-neutral-900"
-                  : isDark ? "text-neutral-300 hover:bg-white/[0.06]" : "text-neutral-700 hover:bg-neutral-100"
+                    ? "bg-[#e2593b] text-white"
+                    : isToday
+                      ? isDark
+                        ? "bg-white/10 text-white"
+                        : "bg-neutral-200 text-neutral-900"
+                      : isDark
+                        ? "text-neutral-300 hover:bg-white/[0.06]"
+                        : "text-neutral-700 hover:bg-neutral-100"
               }`}
-            >{day}</button>
+            >
+              {day}
+            </button>
           );
         })}
       </div>
@@ -154,35 +186,50 @@ function MiniCalendar({ selectedDate, onSelect, isDark }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isMatched, isDark, matchId }) {
+export default function AvailabilityCalendar({
+  uid,
+  targetUid,
+  isOwnProfile,
+  isMatched,
+  isDark,
+  matchId,
+}) {
   const { user } = useAuth();
 
   // Availability state
   const [availability, setAvailability] = useState(null);
-  const [loading, setLoading]   = useState(false);   // false by default — no spinner until fetch starts
-  const [saving,  setSaving]    = useState(false);
-  const [error,   setError]     = useState("");
-  const [saved,   setSaved]     = useState(false);
+  const [loading, setLoading] = useState(false); // false by default — no spinner until fetch starts
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
 
   // Edit state
-  const [editMode,    setEditMode]    = useState(false);
-  const [draftSlots,  setDraftSlots]  = useState([]);
-  const [tz,          setTz]          = useState(detectTimezone);
+  const [editMode, setEditMode] = useState(false);
+  const [draftSlots, setDraftSlots] = useState([]);
+  const [tz, setTz] = useState(detectTimezone);
 
   // New slot inputs
-  const [newDay,   setNewDay]   = useState(1);
+  const [newDay, setNewDay] = useState(1);
   const [newStart, setNewStart] = useState("14:00");
-  const [newEnd,   setNewEnd]   = useState("17:00");
+  const [newEnd, setNewEnd] = useState("17:00");
 
   // Booking state
-  const [showBooking,  setShowBooking]  = useState(false);
-  const [bookDate,     setBookDate]     = useState(null);
-  const [bookTime,     setBookTime]     = useState("14:00");
+  const [showBooking, setShowBooking] = useState(false);
+  const [bookDate, setBookDate] = useState(null);
+  const [bookTime, setBookTime] = useState("14:00");
   const [bookDuration, setBookDuration] = useState(60);
-  const [bookSkill,    setBookSkill]    = useState("");
-  const [booking,      setBooking]      = useState(false);
-  const [bookError,    setBookError]    = useState("");
-  const [bookSuccess,  setBookSuccess]  = useState(false);
+  const [bookSkill, setBookSkill] = useState("");
+  const [bookMeetingLink, setBookMeetingLink] = useState("");
+  const [booking, setBooking] = useState(false);
+  const [bookError, setBookError] = useState("");
+  const [bookSuccess, setBookSuccess] = useState(false);
+  const [rescheduleSessionId, setRescheduleSessionId] = useState("");
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("14:00");
+  const [rescheduleDuration, setRescheduleDuration] = useState(60);
+  const [rescheduleMeetingLink, setRescheduleMeetingLink] = useState("");
+  const [rescheduleError, setRescheduleError] = useState("");
+  const [rescheduleSuccess, setRescheduleSuccess] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionError, setSessionError] = useState("");
@@ -215,9 +262,13 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
           setError(e.message || "Could not load availability.");
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [uid]);
 
   async function loadSessions() {
@@ -254,16 +305,23 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
     } catch (e) {
       setError(e.message || "Failed to save. Please try again.");
     } finally {
-      setSaving(false);   // ← always runs — save can never get stuck
+      setSaving(false); // ← always runs — save can never get stuck
     }
   }
 
   // ── Slot helpers ────────────────────────────────────────────────────────────
   function addSlot() {
-    const slot = { dayOfWeek: Number(newDay), startTime: newStart, endTime: newEnd };
+    const slot = {
+      dayOfWeek: Number(newDay),
+      startTime: newStart,
+      endTime: newEnd,
+    };
     // Prevent exact duplicates
     const exists = draftSlots.some(
-      (s) => s.dayOfWeek === slot.dayOfWeek && s.startTime === slot.startTime && s.endTime === slot.endTime
+      (s) =>
+        s.dayOfWeek === slot.dayOfWeek &&
+        s.startTime === slot.startTime &&
+        s.endTime === slot.endTime,
     );
     if (!exists) setDraftSlots((prev) => [...prev, slot]);
   }
@@ -289,16 +347,23 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
       const scheduledAt = new Date(bookDate);
       scheduledAt.setHours(h, m, 0, 0);
       await bookSession({
-        requesterId:     user.uid,
-        targetId:        targetUid ?? uid,
-        matchId:         matchId ?? "",
-        scheduledAt:     scheduledAt.toISOString(),
+        requesterId: user.uid,
+        targetId: targetUid ?? uid,
+        matchId: matchId ?? "",
+        scheduledAt: scheduledAt.toISOString(),
         durationMinutes: bookDuration,
-        skill:           bookSkill,
+        skill: bookSkill,
+        meetingLink: bookMeetingLink,
       });
       await loadSessions();
       setBookSuccess(true);
-      setTimeout(() => { setShowBooking(false); setBookSuccess(false); setBookDate(null); setBookSkill(""); }, 2500);
+      setTimeout(() => {
+        setShowBooking(false);
+        setBookSuccess(false);
+        setBookDate(null);
+        setBookSkill("");
+        setBookMeetingLink("");
+      }, 2500);
     } catch (e) {
       setBookError(e.message || "Booking failed. Please try again.");
     } finally {
@@ -322,6 +387,60 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
     }
   }
 
+  function formatDateInput(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 10);
+  }
+
+  function formatTimeInput(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "14:00";
+    return date.toTimeString().slice(0, 5);
+  }
+
+  async function openReschedule(session) {
+    setRescheduleSessionId(session.id);
+    setRescheduleDate(formatDateInput(session.scheduledAt));
+    setRescheduleTime(formatTimeInput(session.scheduledAt));
+    setRescheduleDuration(session.durationMinutes || 60);
+    setRescheduleMeetingLink(session.meetingLink || "");
+    setRescheduleError("");
+    setRescheduleSuccess(false);
+  }
+
+  function closeReschedule() {
+    setRescheduleSessionId("");
+    setRescheduleError("");
+    setRescheduleSuccess(false);
+  }
+
+  async function handleReschedule(sessionId) {
+    if (!sessionId || !rescheduleDate || !rescheduleTime) return;
+    setUpdatingSessionId(sessionId);
+    setRescheduleError("");
+    setRescheduleSuccess(false);
+    try {
+      const [h, m] = rescheduleTime.split(":").map(Number);
+      const scheduledAt = new Date(rescheduleDate);
+      scheduledAt.setHours(h, m, 0, 0);
+      await rescheduleLearningSession(sessionId, {
+        scheduledAt: scheduledAt.toISOString(),
+        durationMinutes: rescheduleDuration,
+        meetingLink: rescheduleMeetingLink,
+      });
+      await loadSessions();
+      setRescheduleSuccess(true);
+      setTimeout(() => {
+        closeReschedule();
+      }, 2500);
+    } catch (e) {
+      setRescheduleError(e.message || "Could not reschedule session.");
+    } finally {
+      setUpdatingSessionId("");
+    }
+  }
+
   // ── Shared input class ──────────────────────────────────────────────────────
   const selCls = `px-3 py-2 text-xs font-medium rounded-xl border outline-none transition-all ${
     isDark
@@ -330,23 +449,33 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
   }`;
 
   const displaySlots = editMode ? draftSlots : (availability?.recurring ?? []);
-  const displayTz    = editMode ? tz : (availability?.timezone ?? detectTimezone());
+  const displayTz = editMode
+    ? tz
+    : (availability?.timezone ?? detectTimezone());
   const visibleSessions = sessions
     .filter((session) => {
       if (isOwnProfile) return true;
       const otherId = targetUid ?? uid;
-      return [session.teacherId, session.learnerId, session.requesterId, session.targetId].includes(otherId);
+      return [
+        session.teacherId,
+        session.learnerId,
+        session.requesterId,
+        session.targetId,
+      ].includes(otherId);
     })
     .slice()
-    .sort((a, b) => new Date(b.scheduledAt || 0) - new Date(a.scheduledAt || 0));
+    .sort(
+      (a, b) => new Date(b.scheduledAt || 0) - new Date(a.scheduledAt || 0),
+    );
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
-
       {/* Header row */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+        <div
+          className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+        >
           <Globe size={11} />
           {loading ? "Detecting timezone…" : displayTz}
         </div>
@@ -354,9 +483,15 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
         {isOwnProfile && !editMode && !loading && (
           <button
             type="button"
-            onClick={() => { setEditMode(true); setSaved(false); setError(""); }}
+            onClick={() => {
+              setEditMode(true);
+              setSaved(false);
+              setError("");
+            }}
             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${
-              isDark ? "border-white/10 text-neutral-300 hover:bg-white/[0.04]" : "border-neutral-200 text-neutral-600 hover:bg-neutral-100"
+              isDark
+                ? "border-white/10 text-neutral-300 hover:bg-white/[0.04]"
+                : "border-neutral-200 text-neutral-600 hover:bg-neutral-100"
             }`}
           >
             Edit availability
@@ -369,7 +504,9 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
               type="button"
               onClick={cancelEdit}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${
-                isDark ? "border-white/10 text-neutral-300 hover:bg-white/[0.04]" : "border-neutral-200 text-neutral-600 hover:bg-neutral-100"
+                isDark
+                  ? "border-white/10 text-neutral-300 hover:bg-white/[0.04]"
+                  : "border-neutral-200 text-neutral-600 hover:bg-neutral-100"
               }`}
             >
               Cancel
@@ -379,10 +516,16 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
               onClick={handleSave}
               disabled={saving}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all ${
-                isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                isDark
+                  ? "bg-white text-black hover:bg-neutral-100"
+                  : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
               } ${saving ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+              {saving ? (
+                <Loader2 size={11} className="animate-spin" />
+              ) : (
+                <Check size={11} />
+              )}
               {saving ? "Saving…" : "Save"}
             </button>
           </div>
@@ -405,7 +548,11 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
       {/* Timezone editor */}
       {editMode && (
         <label className="flex flex-col gap-1.5">
-          <span className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>Timezone</span>
+          <span
+            className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+          >
+            Timezone
+          </span>
           <input
             value={tz}
             onChange={(e) => setTz(e.target.value)}
@@ -417,8 +564,12 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
 
       {/* Slots */}
       {!loading && displaySlots.length === 0 && !editMode ? (
-        <p className={`text-xs font-medium ${isDark ? "text-white/20" : "text-neutral-400"}`}>
-          {isOwnProfile ? "No availability set yet. Click \"Edit availability\" to add time slots." : "This user hasn't set their availability yet."}
+        <p
+          className={`text-xs font-medium ${isDark ? "text-white/20" : "text-neutral-400"}`}
+        >
+          {isOwnProfile
+            ? 'No availability set yet. Click "Edit availability" to add time slots.'
+            : "This user hasn't set their availability yet."}
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -426,7 +577,9 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
             <div
               key={i}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold ${
-                isDark ? "border-white/[0.08] bg-white/[0.03] text-neutral-200" : "border-neutral-200 bg-neutral-50 text-neutral-700"
+                isDark
+                  ? "border-white/[0.08] bg-white/[0.03] text-neutral-200"
+                  : "border-neutral-200 bg-neutral-50 text-neutral-700"
               }`}
             >
               <Clock size={10} className="text-[#e2593b]" />
@@ -447,22 +600,52 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
 
       {/* Add slot form */}
       {editMode && (
-        <div className={`p-4 rounded-2xl border space-y-3 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}>
-          <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>Add a time slot</p>
+        <div
+          className={`p-4 rounded-2xl border space-y-3 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}
+        >
+          <p
+            className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-400" : "text-neutral-500"}`}
+          >
+            Add a time slot
+          </p>
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1">
-              <span className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>Day</span>
-              <select value={newDay} onChange={(e) => setNewDay(e.target.value)} className={selCls}>
-                {DAY_NAMES.map((d, i) => <option key={d} value={i}>{d}</option>)}
+              <span
+                className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+              >
+                Day
+              </span>
+              <select
+                value={newDay}
+                onChange={(e) => setNewDay(e.target.value)}
+                className={selCls}
+              >
+                {DAY_NAMES.map((d, i) => (
+                  <option key={d} value={i}>
+                    {d}
+                  </option>
+                ))}
               </select>
             </label>
-            <TimeInput label="Start" value={newStart} onChange={setNewStart} isDark={isDark} />
-            <TimeInput label="End"   value={newEnd}   onChange={setNewEnd}   isDark={isDark} />
+            <TimeInput
+              label="Start"
+              value={newStart}
+              onChange={setNewStart}
+              isDark={isDark}
+            />
+            <TimeInput
+              label="End"
+              value={newEnd}
+              onChange={setNewEnd}
+              isDark={isDark}
+            />
             <button
               type="button"
               onClick={addSlot}
               className={`px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all active:scale-95 ${
-                isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                isDark
+                  ? "bg-white text-black hover:bg-neutral-100"
+                  : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
               }`}
             >
               <Plus size={11} /> Add
@@ -493,7 +676,9 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
             type="button"
             onClick={() => setShowBooking((p) => !p)}
             className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all active:scale-95 ${
-              isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+              isDark
+                ? "bg-white text-black hover:bg-neutral-100"
+                : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
             }`}
           >
             <Calendar size={11} />
@@ -508,18 +693,41 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden mt-4"
               >
-                <div className={`p-5 rounded-2xl border space-y-4 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-neutral-200"}`}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#e2593b]">Pick a date</p>
+                <div
+                  className={`p-5 rounded-2xl border space-y-4 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-neutral-200"}`}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#e2593b]">
+                    Pick a date
+                  </p>
 
-                  <MiniCalendar selectedDate={bookDate} onSelect={setBookDate} isDark={isDark} />
+                  <MiniCalendar
+                    selectedDate={bookDate}
+                    onSelect={setBookDate}
+                    isDark={isDark}
+                  />
 
                   {bookDate && (
                     <div className="flex flex-wrap gap-3">
-                      <TimeInput label="Time" value={bookTime} onChange={setBookTime} isDark={isDark} />
+                      <TimeInput
+                        label="Time"
+                        value={bookTime}
+                        onChange={setBookTime}
+                        isDark={isDark}
+                      />
 
                       <label className="flex flex-col gap-1">
-                        <span className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>Duration</span>
-                        <select value={bookDuration} onChange={(e) => setBookDuration(Number(e.target.value))} className={selCls}>
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                        >
+                          Duration
+                        </span>
+                        <select
+                          value={bookDuration}
+                          onChange={(e) =>
+                            setBookDuration(Number(e.target.value))
+                          }
+                          className={selCls}
+                        >
                           <option value={30}>30 min</option>
                           <option value={60}>60 min</option>
                           <option value={90}>90 min</option>
@@ -528,11 +736,28 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
                       </label>
 
                       <label className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                        <span className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>Skill</span>
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                        >
+                          Skill
+                        </span>
                         <input
                           value={bookSkill}
                           onChange={(e) => setBookSkill(e.target.value)}
                           placeholder="e.g. React"
+                          className={`${selCls} w-full`}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 min-w-full sm:min-w-[220px]">
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                        >
+                          Meeting link (optional)
+                        </span>
+                        <input
+                          value={bookMeetingLink}
+                          onChange={(e) => setBookMeetingLink(e.target.value)}
+                          placeholder="https://meet.example.com/session"
                           className={`${selCls} w-full`}
                         />
                       </label>
@@ -545,20 +770,31 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
                       onClick={handleBook}
                       disabled={booking || !bookSkill}
                       className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all active:scale-95 ${
-                        isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                        isDark
+                          ? "bg-white text-black hover:bg-neutral-100"
+                          : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
                       } ${booking || !bookSkill ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
+                      {booking ? (
+                        <Loader2 size={11} className="animate-spin" />
+                      ) : bookSuccess ? (
+                        <Check size={11} />
+                      ) : (
+                        <Calendar size={11} />
+                      )}
                       {booking
-                        ? <Loader2 size={11} className="animate-spin" />
+                        ? "Booking…"
                         : bookSuccess
-                        ? <Check size={11} />
-                        : <Calendar size={11} />
-                      }
-                      {booking ? "Booking…" : bookSuccess ? "Booked!" : "Confirm booking"}
+                          ? "Booked!"
+                          : "Confirm booking"}
                     </button>
                   )}
 
-                  {bookError && <p className="text-xs text-rose-500 font-medium">{bookError}</p>}
+                  {bookError && (
+                    <p className="text-xs text-rose-500 font-medium">
+                      {bookError}
+                    </p>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -568,25 +804,46 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
 
       <div className="pt-2 border-t border-white/[0.06]">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}>
+          <p
+            className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+          >
             Sessions
           </p>
-          {sessionsLoading && <Loader2 size={12} className="animate-spin text-[#e2593b]" />}
+          {sessionsLoading && (
+            <Loader2 size={12} className="animate-spin text-[#e2593b]" />
+          )}
         </div>
 
-        {sessionError && <p className="mb-3 text-xs font-medium text-rose-500">{sessionError}</p>}
+        {sessionError && (
+          <p className="mb-3 text-xs font-medium text-rose-500">
+            {sessionError}
+          </p>
+        )}
 
         {!sessionsLoading && visibleSessions.length === 0 ? (
-          <p className={`text-xs font-medium ${isDark ? "text-white/20" : "text-neutral-400"}`}>
-            {isOwnProfile ? "No sessions scheduled yet." : "No sessions scheduled with this person yet."}
+          <p
+            className={`text-xs font-medium ${isDark ? "text-white/20" : "text-neutral-400"}`}
+          >
+            {isOwnProfile
+              ? "No sessions scheduled yet."
+              : "No sessions scheduled with this person yet."}
           </p>
         ) : (
           <div className="space-y-2">
             {visibleSessions.map((session) => {
               const isRequester = session.requesterId === user?.uid;
-              const canConfirm = ["pending", "rescheduled"].includes(session.status) && !isRequester;
+              const isTeacher = session.teacherId === user?.uid;
+              const canConfirm =
+                ["pending", "rescheduled"].includes(session.status) &&
+                !isRequester;
               const canComplete = session.status === "confirmed";
+              const canReschedule =
+                isTeacher &&
+                session.status !== "cancelled" &&
+                session.status !== "completed";
               const isUpdating = updatingSessionId === session.id;
+              const isRescheduling = rescheduleSessionId === session.id;
+              const proposedByYou = session.proposedBy === user?.uid;
 
               return (
                 <div
@@ -595,65 +852,261 @@ export default function AvailabilityCalendar({ uid, targetUid, isOwnProfile, isM
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-bold truncate">{session.skill || "Skill exchange"}</p>
-                      <p className={`mt-1 text-[10px] font-medium ${isDark ? "text-neutral-500" : "text-neutral-500"}`}>
-                        {formatSessionTime(session.scheduledAt)} · {session.durationMinutes || 60} min
+                      <p className="text-xs font-bold truncate">
+                        {session.skill || "Skill exchange"}
                       </p>
-                      <p className={`mt-1 text-[10px] font-medium ${isDark ? "text-neutral-500" : "text-neutral-500"}`}>
-                        {session.teacher?.name || "Teacher"} teaches {session.learner?.name || "learner"}
+                      <p
+                        className={`mt-1 text-[10px] font-medium ${isDark ? "text-neutral-500" : "text-neutral-500"}`}
+                      >
+                        {formatSessionTime(session.scheduledAt)} ·{" "}
+                        {session.durationMinutes || 60} min
+                      </p>
+                      <p
+                        className={`mt-1 text-[10px] font-medium ${isDark ? "text-neutral-500" : "text-neutral-500"}`}
+                      >
+                        {session.teacher?.name || "Teacher"} teaches{" "}
+                        {session.learner?.name || "learner"}
+                      </p>
+                      <p
+                        className={`mt-1 text-[10px] ${isDark ? "text-neutral-500" : "text-neutral-500"}`}
+                      >
+                        {proposedByYou
+                          ? "You proposed this time."
+                          : "Awaiting your response."}
                       </p>
                     </div>
-                    <span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-widest ${
-                      session.status === "completed"
-                        ? "bg-emerald-500/10 text-emerald-500"
-                        : session.status === "confirmed"
-                        ? "bg-blue-500/10 text-blue-500"
-                        : session.status === "cancelled"
-                        ? "bg-rose-500/10 text-rose-500"
-                        : "bg-amber-500/10 text-amber-500"
-                    }`}>
+                    <span
+                      className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-widest ${
+                        session.status === "completed"
+                          ? "bg-emerald-500/10 text-emerald-500"
+                          : session.status === "confirmed"
+                            ? "bg-blue-500/10 text-blue-500"
+                            : session.status === "cancelled"
+                              ? "bg-rose-500/10 text-rose-500"
+                              : "bg-amber-500/10 text-amber-500"
+                      }`}
+                    >
                       {statusLabel(session.status)}
                     </span>
                   </div>
 
-                  {session.status !== "cancelled" && session.status !== "completed" && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {canConfirm && (
+                  {(session.meetingLink ||
+                    session.googleCalendar?.htmlLink) && (
+                    <div className="mt-3 space-y-2 text-[10px] text-neutral-500">
+                      {session.meetingLink && (
+                        <p>
+                          <span className="font-bold">Meeting link:</span>{" "}
+                          <a
+                            href={session.meetingLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline hover:text-[#e2593b] break-all"
+                          >
+                            {session.meetingLink}
+                          </a>
+                        </p>
+                      )}
+                      {session.googleCalendar?.htmlLink && (
+                        <p>
+                          <span className="font-bold">Calendar event:</span>{" "}
+                          <a
+                            href={session.googleCalendar.htmlLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline hover:text-[#e2593b] break-all"
+                          >
+                            View event
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {session.status !== "cancelled" &&
+                    session.status !== "completed" && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {canConfirm && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSessionAction(session.id, "confirm")
+                            }
+                            disabled={isUpdating}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${
+                              isDark
+                                ? "bg-white text-black hover:bg-neutral-100"
+                                : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                            } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                          >
+                            {isUpdating ? (
+                              <Loader2 size={10} className="animate-spin" />
+                            ) : (
+                              <Check size={10} />
+                            )}
+                            Confirm
+                          </button>
+                        )}
+                        {canComplete && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSessionAction(session.id, "complete")
+                            }
+                            disabled={isUpdating}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${
+                              isDark
+                                ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20"
+                                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                            } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                          >
+                            {isUpdating ? (
+                              <Loader2 size={10} className="animate-spin" />
+                            ) : (
+                              <Check size={10} />
+                            )}
+                            Complete exchange
+                          </button>
+                        )}
+                        {canReschedule && !isRescheduling && (
+                          <button
+                            type="button"
+                            onClick={() => openReschedule(session)}
+                            disabled={isUpdating}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${
+                              isDark
+                                ? "border-white/10 text-neutral-400 hover:bg-white/[0.04]"
+                                : "border-neutral-200 text-neutral-500 hover:bg-neutral-100"
+                            } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                          >
+                            Reschedule
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => handleSessionAction(session.id, "confirm")}
+                          onClick={() =>
+                            handleSessionAction(session.id, "cancel")
+                          }
                           disabled={isUpdating}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${
-                            isDark ? "bg-white text-black hover:bg-neutral-100" : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${
+                            isDark
+                              ? "border-white/10 text-neutral-400 hover:bg-white/[0.04]"
+                              : "border-neutral-200 text-neutral-500 hover:bg-neutral-100"
                           } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
-                          {isUpdating ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
-                          Confirm
+                          Cancel
                         </button>
-                      )}
-                      {canComplete && (
+                      </div>
+                    )}
+
+                  {isRescheduling && (
+                    <div
+                      className={`mt-3 p-4 rounded-2xl border ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-neutral-50 border-neutral-200"}`}
+                    >
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="flex flex-col gap-1">
+                          <span
+                            className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                          >
+                            New date
+                          </span>
+                          <input
+                            type="date"
+                            value={rescheduleDate}
+                            onChange={(e) => setRescheduleDate(e.target.value)}
+                            className={selCls}
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span
+                            className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                          >
+                            New time
+                          </span>
+                          <input
+                            type="time"
+                            value={rescheduleTime}
+                            onChange={(e) => setRescheduleTime(e.target.value)}
+                            step="1800"
+                            className={selCls}
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span
+                            className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                          >
+                            Duration
+                          </span>
+                          <select
+                            value={rescheduleDuration}
+                            onChange={(e) =>
+                              setRescheduleDuration(Number(e.target.value))
+                            }
+                            className={selCls}
+                          >
+                            <option value={30}>30 min</option>
+                            <option value={60}>60 min</option>
+                            <option value={90}>90 min</option>
+                            <option value={120}>2 hrs</option>
+                          </select>
+                        </label>
+                        <label className="flex flex-col gap-1 sm:col-span-2">
+                          <span
+                            className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                          >
+                            Meeting link (optional)
+                          </span>
+                          <input
+                            value={rescheduleMeetingLink}
+                            onChange={(e) =>
+                              setRescheduleMeetingLink(e.target.value)
+                            }
+                            placeholder="https://meet.example.com/session"
+                            className={selCls}
+                          />
+                        </label>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2 items-center">
                         <button
                           type="button"
-                          onClick={() => handleSessionAction(session.id, "complete")}
-                          disabled={isUpdating}
+                          onClick={() => handleReschedule(session.id)}
+                          disabled={
+                            isUpdating || !rescheduleDate || !rescheduleTime
+                          }
                           className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${
-                            isDark ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                          } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                            isDark
+                              ? "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                              : "bg-[#e2593b] text-white hover:bg-[#d44a2e]"
+                          } ${isUpdating || !rescheduleDate || !rescheduleTime ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
-                          {isUpdating ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
-                          Complete exchange
+                          {isUpdating ? (
+                            <Loader2 size={10} className="animate-spin" />
+                          ) : (
+                            <Calendar size={10} />
+                          )}
+                          Save new time
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleSessionAction(session.id, "cancel")}
-                        disabled={isUpdating}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${
-                          isDark ? "border-white/10 text-neutral-400 hover:bg-white/[0.04]" : "border-neutral-200 text-neutral-500 hover:bg-neutral-100"
-                        } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
-                      >
-                        Cancel
-                      </button>
+                        <button
+                          type="button"
+                          onClick={closeReschedule}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${
+                            isDark
+                              ? "border-white/10 text-neutral-400 hover:bg-white/[0.04]"
+                              : "border-neutral-200 text-neutral-500 hover:bg-neutral-100"
+                          }`}
+                        >
+                          Cancel
+                        </button>
+                        {rescheduleSuccess && (
+                          <span className="text-xs font-medium text-emerald-500">
+                            Reschedule request saved.
+                          </span>
+                        )}
+                        {rescheduleError && (
+                          <p className="text-xs font-medium text-rose-500">
+                            {rescheduleError}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
