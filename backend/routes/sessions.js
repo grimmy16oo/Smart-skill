@@ -30,7 +30,8 @@ function getId(value) {
 
 function serializeSession(session) {
   if (!session) return null;
-  const doc = typeof session.toObject === "function" ? session.toObject() : session;
+  const doc =
+    typeof session.toObject === "function" ? session.toObject() : session;
 
   return {
     id: doc._id.toString(),
@@ -68,7 +69,7 @@ async function getParticipantSession(sessionId, userId) {
     Session.findOne({
       _id: sessionId,
       $or: [{ teacherId: userId }, { learnerId: userId }],
-    })
+    }),
   );
 }
 
@@ -88,10 +89,16 @@ async function syncConfirmedSessionToCalendar(session) {
   let event;
 
   try {
-    event = await createCalendarEvent(session, session.teacherId._id || session.teacherId);
+    event = await createCalendarEvent(
+      session,
+      session.teacherId._id || session.teacherId,
+    );
   } catch (error) {
     if (error.status !== 428) throw error;
-    event = await createCalendarEvent(session, session.learnerId._id || session.learnerId);
+    event = await createCalendarEvent(
+      session,
+      session.learnerId._id || session.learnerId,
+    );
   }
 
   session.googleCalendar = {
@@ -103,7 +110,8 @@ async function syncConfirmedSessionToCalendar(session) {
   };
 
   if (event.organizer?.email === session.learnerId.email) {
-    session.googleCalendar.organizerUserId = session.learnerId._id || session.learnerId;
+    session.googleCalendar.organizerUserId =
+      session.learnerId._id || session.learnerId;
   }
 }
 
@@ -112,7 +120,7 @@ router.get("/", protect, async (req, res) => {
     const sessions = await populateSession(
       Session.find({
         $or: [{ teacherId: req.userId }, { learnerId: req.userId }],
-      }).sort({ scheduledAt: -1 })
+      }).sort({ scheduledAt: -1 }),
     );
 
     res.json({
@@ -133,20 +141,30 @@ router.post("/", protect, async (req, res) => {
 
     const scheduledAt = new Date(req.body.scheduledAt);
     if (Number.isNaN(scheduledAt.getTime())) {
-      return res.status(400).json({ message: "Valid start date and time are required" });
+      return res
+        .status(400)
+        .json({ message: "Valid start date and time are required" });
     }
 
     const durationMinutes = Number(req.body.durationMinutes) || 60;
     if (durationMinutes < 15 || durationMinutes > 240) {
-      return res.status(400).json({ message: "Duration must be between 15 and 240 minutes" });
+      return res
+        .status(400)
+        .json({ message: "Duration must be between 15 and 240 minutes" });
     }
 
-    const teacherId = isObjectId(req.body.teacherId) ? req.body.teacherId : targetId;
-    const learnerId = isObjectId(req.body.learnerId) ? req.body.learnerId : req.userId;
+    const teacherId = isObjectId(req.body.teacherId)
+      ? req.body.teacherId
+      : targetId;
+    const learnerId = isObjectId(req.body.learnerId)
+      ? req.body.learnerId
+      : req.userId;
     const participantIds = [teacherId, learnerId].map((id) => id.toString());
 
     if (!participantIds.includes(req.userId.toString())) {
-      return res.status(403).json({ message: "You must be part of the session" });
+      return res
+        .status(403)
+        .json({ message: "You must be part of the session" });
     }
 
     const [teacher, learner, matchOk] = await Promise.all([
@@ -160,7 +178,9 @@ router.post("/", protect, async (req, res) => {
     }
 
     if (!matchOk) {
-      return res.status(403).json({ message: "A valid match is required for this session" });
+      return res
+        .status(403)
+        .json({ message: "A valid match is required for this session" });
     }
 
     const session = await Session.create({
@@ -178,7 +198,9 @@ router.post("/", protect, async (req, res) => {
     });
 
     const populated = await getParticipantSession(session._id, req.userId);
-    res.status(201).json({ success: true, session: serializeSession(populated) });
+    res
+      .status(201)
+      .json({ success: true, session: serializeSession(populated) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -190,21 +212,31 @@ router.post("/:id/confirm", protect, async (req, res) => {
     if (!session) return res.status(404).json({ message: "Session not found" });
 
     if (session.proposedBy?.toString() === req.userId.toString()) {
-      return res.status(403).json({ message: "The other person needs to confirm this session" });
+      return res
+        .status(403)
+        .json({ message: "The other person needs to confirm this session" });
     }
 
     if (!["pending", "rescheduled"].includes(session.status)) {
-      return res.status(400).json({ message: "Only pending sessions can be confirmed" });
+      return res
+        .status(400)
+        .json({ message: "Only pending sessions can be confirmed" });
     }
 
     session.status = "confirmed";
     session.confirmedBy = req.userId;
-    session.meetingLink = cleanText(req.body.meetingLink ?? session.meetingLink, 500);
+    session.meetingLink = cleanText(
+      req.body.meetingLink ?? session.meetingLink,
+      500,
+    );
 
+    // Try to sync to calendar, but don't fail if user hasn't connected Google Calendar
     try {
       await syncConfirmedSessionToCalendar(session);
     } catch (error) {
-      if (error.status !== 428) throw error;
+      // Allow confirmation even without calendar connection (428) or other calendar errors
+      // Just log the error but continue with session confirmation
+      console.error("Calendar sync failed during confirmation:", error.message);
     }
     await session.save();
 
@@ -221,17 +253,25 @@ router.patch("/:id/reschedule", protect, async (req, res) => {
     if (!session) return res.status(404).json({ message: "Session not found" });
 
     if (session.teacherId._id.toString() !== req.userId.toString()) {
-      return res.status(403).json({ message: "Only the teacher can reschedule this session" });
+      return res
+        .status(403)
+        .json({ message: "Only the teacher can reschedule this session" });
     }
 
     const scheduledAt = new Date(req.body.scheduledAt);
     if (Number.isNaN(scheduledAt.getTime())) {
-      return res.status(400).json({ message: "Valid start date and time are required" });
+      return res
+        .status(400)
+        .json({ message: "Valid start date and time are required" });
     }
 
     session.scheduledAt = scheduledAt;
-    session.durationMinutes = Number(req.body.durationMinutes) || session.durationMinutes;
-    session.meetingLink = cleanText(req.body.meetingLink ?? session.meetingLink, 500);
+    session.durationMinutes =
+      Number(req.body.durationMinutes) || session.durationMinutes;
+    session.meetingLink = cleanText(
+      req.body.meetingLink ?? session.meetingLink,
+      500,
+    );
 
     if (session.status === "confirmed") {
       await updateCalendarEvent(session);
@@ -258,7 +298,9 @@ router.post("/:id/complete", protect, async (req, res) => {
     }
 
     if (session.status !== "confirmed") {
-      return res.status(400).json({ message: "Only confirmed sessions can be completed" });
+      return res
+        .status(400)
+        .json({ message: "Only confirmed sessions can be completed" });
     }
 
     session.status = "completed";
