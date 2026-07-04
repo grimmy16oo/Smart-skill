@@ -5,6 +5,7 @@ import Match from "../models/Match.js";
 import SwipeAction from "../models/SwipeAction.js";
 import User from "../models/User.js";
 import Review from "../models/Review.js";
+import Session from "../models/Session.js";
 import { protect } from "../middleware/auth.js";
 import { buildBehaviorProfile, computeMatchPercent } from "../utils/matching.js";
 import { serializeUser } from "../utils/serializers.js";
@@ -168,6 +169,18 @@ router.post("/:id/reviews", protect, async (req, res) => {
 
     if (!match) {
       return res.status(403).json({ message: "You can only review users you have matched with" });
+    }
+
+    const completedSession = await Session.findOne({
+      status: "completed",
+      $or: [
+        { teacherId: reviewerId, learnerId: targetId },
+        { teacherId: targetId, learnerId: reviewerId },
+      ],
+    });
+
+    if (!completedSession) {
+      return res.status(403).json({ message: "You can only review users after a completed session" });
     }
 
     const review = await Review.findOneAndUpdate(

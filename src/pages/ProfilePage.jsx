@@ -55,6 +55,7 @@ import PortfolioShowcase from "../components/PortfolioShowcase";
 import EnhancedSkillBadge from "../components/EnhancedSkillBadge";
 import ProfileCompletion from "../components/ProfileCompletion";
 import PresenceIndicator from "../components/PresenceIndicator";
+import { getLearningSessions } from "../services/calendarService";
 
 // ── helpers (unchanged) ───────────────────────────────────────────────────────
 
@@ -217,6 +218,8 @@ export default function ProfilePage() {
   const [reviewText, setReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState("");
+  const [reviewSessions, setReviewSessions] = useState([]);
+  const [reviewEligibilityLoading, setReviewEligibilityLoading] = useState(false);
 
   const [matches, setMatches] = useState([]);
   const [skillMetaMap, setSkillMetaMap] = useState({});
@@ -244,6 +247,32 @@ export default function ProfilePage() {
     setReviewsLoading(true);
     getUserReviews(displayProfile.uid).then(setReviews).catch(console.error).finally(() => setReviewsLoading(false));
   }, [displayProfile?.uid]);
+
+  useEffect(() => {
+    if (isOwnProfile || !user?.uid || !displayProfile?.uid) {
+      setReviewSessions([]);
+      setReviewEligibilityLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setReviewEligibilityLoading(true);
+
+    getLearningSessions()
+      .then((sessions) => {
+        if (!cancelled) setReviewSessions(sessions);
+      })
+      .catch(() => {
+        if (!cancelled) setReviewSessions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setReviewEligibilityLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile, user?.uid, displayProfile?.uid]);
 
   useEffect(() => {
     if (!displayProfile?.uid) { setActivityCount(0); return; }
@@ -274,6 +303,22 @@ export default function ProfilePage() {
   }, [matches, id, user?.uid]);
 
   const isMatched = !!activeMatch;
+  const currentUserId = user?.uid;
+  const profileUserId = displayProfile?.uid;
+  const hasCompletedSessionWithProfile =
+    !isOwnProfile &&
+    Boolean(currentUserId) &&
+    Boolean(profileUserId) &&
+    reviewSessions.some((session) => {
+      if (session.status !== "completed") return false;
+      const participants = [session.teacherId, session.learnerId].filter(Boolean);
+      return participants.includes(currentUserId) && participants.includes(profileUserId);
+    });
+  const canWriteReview = !isOwnProfile && isMatched && hasCompletedSessionWithProfile;
+
+  useEffect(() => {
+    if (!canWriteReview) setShowReviewForm(false);
+  }, [canWriteReview]);
 
   useEffect(() => {
     setForm({
@@ -706,6 +751,7 @@ export default function ProfilePage() {
                 isMatched={isMatched}
                 isDark={isDark}
                 matchId={activeMatch?.id}
+                onSessionsChange={setReviewSessions}
               />
             </ProfileSection>
 
@@ -720,7 +766,7 @@ export default function ProfilePage() {
               accent="text-amber-500"
               isDark={isDark}
               action={
-                !isOwnProfile && isMatched && (
+                canWriteReview && (
                   <button
                     onClick={() => setShowReviewForm(!showReviewForm)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
@@ -772,7 +818,13 @@ export default function ProfilePage() {
                   <div className="w-9 h-9 rounded-xl bg-neutral-500/10 flex items-center justify-center mb-3 opacity-60 mx-auto"><TrendingUp size={14} /></div>
                   <p className="text-xs font-medium">No reviews yet.</p>
                   <p className={`text-[10px] font-medium mt-1 ${isDark ? "text-neutral-600" : "text-neutral-500"}`}>
-                    {isOwnProfile ? "Reviews appear after completed skill exchanges." : `Be the first to review ${displayProfile.name}!`}
+                    {isOwnProfile
+                      ? "Reviews appear after completed skill exchanges."
+                      : reviewEligibilityLoading
+                      ? "Checking completed sessions..."
+                      : canWriteReview
+                      ? `Be the first to review ${displayProfile.name}!`
+                      : "Reviews unlock after you complete a session together."}
                   </p>
                 </div>
               ) : (

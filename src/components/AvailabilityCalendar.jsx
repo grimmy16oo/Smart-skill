@@ -9,7 +9,7 @@
  *  - Abort controller cancels in-flight fetch on unmount
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Clock, Globe, Plus, X, Check, Calendar } from "lucide-react";
 import {
@@ -22,6 +22,7 @@ import {
   completeLearningSession,
   confirmLearningSession,
   getLearningSessions,
+  rescheduleLearningSession,
 } from "../services/calendarService";
 import { useAuth } from "../context/AuthContext";
 
@@ -193,6 +194,7 @@ export default function AvailabilityCalendar({
   isMatched,
   isDark,
   matchId,
+  onSessionsChange,
 }) {
   const { user } = useAuth();
 
@@ -271,23 +273,24 @@ export default function AvailabilityCalendar({
     };
   }, [uid]);
 
-  async function loadSessions() {
+  const loadSessions = useCallback(async () => {
     if (!user?.uid) return;
     setSessionsLoading(true);
     setSessionError("");
     try {
       const next = await getLearningSessions();
       setSessions(next);
+      onSessionsChange?.(next);
     } catch (e) {
       setSessionError(e.message || "Could not load sessions.");
     } finally {
       setSessionsLoading(false);
     }
-  }
+  }, [onSessionsChange, user?.uid]);
 
   useEffect(() => {
     loadSessions();
-  }, [user?.uid]);
+  }, [loadSessions]);
 
   // ── Save availability ───────────────────────────────────────────────────────
   async function handleSave() {

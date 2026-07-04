@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   RotateCcw,
   SlidersHorizontal,
-  X,
   Zap,
   LogIn,
   Loader2,
